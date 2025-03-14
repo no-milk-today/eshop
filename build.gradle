@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'ru.yandex'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter" // "ядро" Spring Boot
+    implementation "org.springframework.boot:spring-boot-starter-data-jdbc" // стартер для работы с базой, используя Spring Data JDBC
+    runtimeOnly "com.mysql:mysql-connector-j" // драйвер для подключения к MySQL
+    testImplementation "org.springframework.boot:spring-boot-testcontainers" // annotation-driven работа с Testcontainers
+    testImplementation "org.testcontainers:junit-jupiter" // интеграция Testcontainers с JUnit
+    testImplementation "org.testcontainers:mysql" // MySql-имплементация абстракции JdbcDatabaseContainer
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
