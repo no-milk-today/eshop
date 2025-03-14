@@ -16,13 +16,13 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 class TransactionTemplateServiceTest extends SpringDataJdbcApplicationTest {
 
     @Autowired
-    TransactionTemplateService transactionManagerService;
+    TransactionalAnnotationService transactionManagerService;
 
     @Autowired
     AccountRepository accountRepository;
 
     @Test
-    void testTransactionManagerValid() {
+    void testTransactionManager() {
         // Инициализируем пользователей (изначальный баланс — 10000)
         var petr = accountRepository.save(new Account("Пётр"));
         var vasily = accountRepository.save(new Account("Василий"));
