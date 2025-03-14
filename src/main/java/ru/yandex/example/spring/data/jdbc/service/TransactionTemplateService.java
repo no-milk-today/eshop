@@ -14,12 +14,13 @@ public class TransactionTemplateService {
     private final AccountRepository accountRepository;
     private final TransactionTemplate transactionTemplate; // для выполнения операций внутри сервиса в транзакции
 
+    // transactionManager автовайрится из контекста (for free)
     public TransactionTemplateService(PlatformTransactionManager transactionManager,
                                       AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
-        transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED); // optional
-        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW); // optional
+        transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED); // транзакция может читать только те данные, которые уже зафиксированы другими транзакциями.
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW); // сегда будет создана новая транзакция, независимо от того, существует ли уже текущая транзакция
     }
 
     public void transfer(Account source, Account target, BigDecimal amount) {
