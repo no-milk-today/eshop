@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.example.spring.data.jdbc.entity.Account;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
@@ -47,6 +48,30 @@ public class AccountDao {
                 account.getBalance(),
                 account.getId()
         );
+    }
+
+    public void saveAll(List<Account> accounts) {
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO account (name, balance) VALUES (?, ?)",
+                accounts,
+                accounts.size(),
+                // Маппер для проставления полей Account в аргументы PreparedStatement
+                (PreparedStatement ps, Account acc) -> {
+                    ps.setString(1, acc.getName());
+                    ps.setBigDecimal(2, acc.getBalance());
+                }
+        );
+    }
+
+    public void delete(Account account) {
+        jdbcTemplate.update(
+                "DELETE FROM account WHERE id = ?",
+                account.getId()
+        );
+    }
+
+    public void deleteAll() {
+        jdbcTemplate.update("DELETE FROM account");
     }
 
 }

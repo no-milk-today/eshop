@@ -1,5 +1,6 @@
 package ru.yandex.example.spring.data.jdbc.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.UncategorizedSQLException;
@@ -8,6 +9,7 @@ import ru.yandex.example.spring.data.jdbc.entity.Account;
 import ru.yandex.example.spring.data.jdbc.repository.AccountDao;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,6 +21,11 @@ class AccountServiceTest extends SpringDataJdbcApplicationTest {
 
     @Autowired
     private AccountDao accountDao;
+
+    @BeforeEach
+    void cleanTables() {
+        accountDao.deleteAll();
+    }
 
     @Test
     void testSuccessfulSqlQueries() {
@@ -43,5 +50,19 @@ class AccountServiceTest extends SpringDataJdbcApplicationTest {
                         "балансы обоих пользователей должны вернуться к изначальным значениям")
                 .map(Account::getBalance)
                 .allMatch(it -> it.compareTo(initialBalance) == 0);
+    }
+
+    @Test
+    void testSaveAll() {
+        var accounts = List.of(
+                new Account("Анатолий"),
+                new Account("Мариана"),
+                new Account("Александр")
+        );
+        accountDao.saveAll(accounts);
+
+        assertThat(accountDao.findAll())
+                .isNotEmpty()
+                .hasSize(3);
     }
 }
