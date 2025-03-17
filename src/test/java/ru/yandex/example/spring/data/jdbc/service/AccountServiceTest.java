@@ -65,4 +65,56 @@ class AccountServiceTest extends SpringDataJdbcApplicationTest {
                 .isNotEmpty()
                 .hasSize(3);
     }
+
+    @Test
+    void testSuccessfulTransfer() {
+        accountDao.create("Petr");
+        accountDao.create("Vasily");
+        var petrAccount = accountDao.findFirstByName("Petr");
+        var vasilyAccount = accountDao.findFirstByName("Vasily");
+        BigDecimal amount = BigDecimal.valueOf(500);
+        BigDecimal initialPetrBalance = petrAccount.getBalance();
+        BigDecimal initialVasilyBalance = vasilyAccount.getBalance();
+
+        accountService.transfer(petrAccount, vasilyAccount, amount);
+
+        var updatedPetrAccount = accountDao.findFirstByName("Petr");
+        var updatedVasilyAccount = accountDao.findFirstByName("Vasily");
+
+        // Check that Petr's balance decreased and Vasily's increased
+        assertThat(updatedPetrAccount.getBalance())
+                .isEqualByComparingTo(initialPetrBalance.subtract(amount));
+        assertThat(updatedVasilyAccount.getBalance())
+                .isEqualByComparingTo(initialVasilyBalance.add(amount));
+    }
+
+    @Test
+    void testMultipleTransfers() {
+        accountDao.create("Alice");
+        accountDao.create("Bob");
+        var aliceAccount = accountDao.findFirstByName("Alice");
+        var bobAccount = accountDao.findFirstByName("Bob");
+        BigDecimal initialAliceBalance = aliceAccount.getBalance();
+        BigDecimal initialBobBalance = bobAccount.getBalance();
+
+        // Transfer 1000 from Alice to Bob
+        accountService.transfer(aliceAccount, bobAccount, BigDecimal.valueOf(1000));
+        // Refresh accounts
+        aliceAccount = accountDao.findFirstByName("Alice");
+        bobAccount = accountDao.findFirstByName("Bob");
+
+        // Transfer 2000 from Alice to Bob
+        accountService.transfer(aliceAccount, bobAccount, BigDecimal.valueOf(2000));
+        // Refresh accounts
+        aliceAccount = accountDao.findFirstByName("Alice");
+        bobAccount = accountDao.findFirstByName("Bob");
+
+        BigDecimal expectedAliceBalance = initialAliceBalance.subtract(BigDecimal.valueOf(3000));
+        BigDecimal expectedBobBalance = initialBobBalance.add(BigDecimal.valueOf(3000));
+
+        assertThat(aliceAccount.getBalance())
+                .isEqualByComparingTo(expectedAliceBalance);
+        assertThat(bobAccount.getBalance())
+                .isEqualByComparingTo(expectedBobBalance);
+    }
 }
