@@ -17,12 +17,22 @@ repositories {
     mavenCentral()
 }
 
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:deprecation'
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.postgresql:postgresql' // драйвер для подключения к Postgres
+
+    testImplementation "org.springframework.boot:spring-boot-testcontainers" // annotation-driven работа с Testcontainers
+    testImplementation "org.testcontainers:junit-jupiter" // интеграция Testcontainers с JUnit
+    testImplementation "org.testcontainers:postgresql"
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok' // видимо без нее никак
 
     implementation 'org.liquibase:liquibase-core:4.25.1'
 }

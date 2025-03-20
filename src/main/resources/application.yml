@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: eshop
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eshop
+    driverClassName: org.postgresql.Driver
+    username: ${PG_USERNAME}
+    password: ${PG_PASSWORD}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  liquibase:
+    change-log: classpath:/db/changelog/liquibase/db.changelog-master.xml
+    # default-schema: eshop_schema
