@@ -1,12 +1,14 @@
-package ru.yandex.example.spring.data.jdbc;
+package ru.practicum.spring.data.shop;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SpringDataJdbcApplication {
+public class Main {
 
     public static void main(String[] args) {
-        SpringApplication.run(SpringDataJdbcApplication.class, args);
+        SpringApplication.run(Main.class, args);
+        System.out.println("Hello, Spring!");
     }
+
 }
