@@ -5,9 +5,9 @@ import liquibase.LabelExpression;
 import liquibase.command.CommandScope;
 import liquibase.command.core.helpers.DatabaseChangelogCommandStep;
 import liquibase.command.core.helpers.DbUrlConnectionArgumentsCommandStep;
-import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -20,34 +20,30 @@ import java.sql.Connection;
 @Testcontainers
 public abstract class AbstractTestcontainers {
 
-    @ServiceConnection
+    @ServiceConnection //  configures the connection automatically
     @Container
     protected static final PostgreSQLContainer<?> postgreSQLContainer =
             new PostgreSQLContainer<>("postgres:16.0");
 
     @BeforeAll
     static void beforeAll() {
+        // Create a JDBC connection to the PostgreSQL container.
         try (Connection connection = postgreSQLContainer.createConnection("")) {
-            // Оборачиваем стандартное соединение в объект JdbcConnection,
-            // который требуется Liquibase для работы с базой данных.
-            JdbcConnection jdbcConnection = new JdbcConnection(connection);
-            // Получаем объект Database, соответствующий типу подключенной базы данных.
-            Database database = DatabaseFactory.getInstance()
+            // Convert the connection for Liquibase compatibility.
+            var jdbcConnection = new JdbcConnection(connection);
+            // Detect the correct database impl for Liquibase.
+            var database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(jdbcConnection);
 
-            // CommandScope позволяет программно собрать и выполнить команду Liquibase (аналог вызова liquibase update).
+            // Execute the Liquibase "update" command to apply the database changelog.
             new CommandScope("update")
-                    // Передаём объект Database, полученный из контейнера.
                     .addArgumentValue(DbUrlConnectionArgumentsCommandStep.DATABASE_ARG, database)
-                    // Указываем путь к master-описанию миграций.
                     .addArgumentValue(DatabaseChangelogCommandStep.CHANGELOG_FILE_ARG, "db/changelog/liquibase/db.changelog-master.xml")
-                    // Передаём контексты (в данном случае – стандартное представление пустых контекстов).
                     .addArgumentValue(DatabaseChangelogCommandStep.CONTEXTS_ARG, new Contexts().toString())
-                    // Передаём фильтр меток (Label Expression), который по умолчанию пуст.
                     .addArgumentValue(DatabaseChangelogCommandStep.LABEL_FILTER_ARG, new LabelExpression().getOriginalString())
-                    // Выполняем команду, которая применяет миграции к базе данных.
                     .execute();
         } catch (Exception e) {
+            // Convert any exception to a RuntimeException, indicating a failure in the migration process.
             throw new RuntimeException("Liquibase migration failed", e);
         }
     }

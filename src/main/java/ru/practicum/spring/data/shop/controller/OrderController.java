@@ -22,39 +22,44 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    // GET "/orders/{id}" - карточка заказа
     @GetMapping("/{id}")
-    public String getOrder(@PathVariable Long id, Model model, HttpServletResponse response) {
-        Optional<Order> orderOpt = orderService.findById(id);
+    public String getOrder(@PathVariable Long id,
+                           @RequestParam(name = "newOrder", required = false, defaultValue = "false") boolean newOrder,
+                           Model model, HttpServletResponse response) {
+        Optional<Order> orderFromDB = orderService.findById(id);
         response.setContentType("text/html;charset=UTF-8"); //todo: to be refactored
-        if (orderOpt.isEmpty()) {
+        if (orderFromDB.isEmpty()) {
             response.setStatus(HttpStatus.NOT_FOUND.value());
             return "not-found"; // Страница not-found.html
         }
-
-        model.addAttribute("order", orderOpt.get());
-        return "order"; // Страница с описанием заказа order.html
+        model.addAttribute("order", orderFromDB.get());
+        model.addAttribute("newOrder", newOrder);
+        return "order"; // Страница order.html
     }
 
-    @GetMapping(params = "sortBy")
-    public String orders(@RequestParam("sortBy") String sortBy, Model model) {
-        // Создаем объект сортировки по указанному филду с направлением ASC (по возрастанию)
-        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
-        List<Order> orders = orderService.findAllSorted(sort);
+    // GET "/orders" - список заказов (с возможной сортировкой)
+    @GetMapping
+    public String orders(@RequestParam(value = "sortBy", required = false) String sortBy, Model model) {
+        List<Order> orders;
+        if (sortBy != null && !sortBy.isBlank()) {
+            orders = orderService.findAllSorted(Sort.by(Sort.Direction.ASC, sortBy));
+        } else {
+            orders = orderService.findAll();
+        }
         model.addAttribute("orders", orders);
-        return "orders-list"; // Отображаем вьюху orders-list.html
+        return "orders-list"; // Шаблон orders-list.html
     }
 
     @PostMapping
     public String createOrder(@ModelAttribute Order order) {
         orderService.save(order);
-
-        return "redirect:/orders"; // Редирект на страницу с описанием заказов
+        return "redirect:/orders"; // Редирект после создания заказа
     }
 
     @DeleteMapping("/{id}")
     public String deleteOrder(@PathVariable Long id) {
         orderService.deleteById(id);
-        return "redirect:/orders"; // Редирект на страницу с описанием заказов
+        return "redirect:/orders"; // Редирект после удаления заказа
     }
-
 }
