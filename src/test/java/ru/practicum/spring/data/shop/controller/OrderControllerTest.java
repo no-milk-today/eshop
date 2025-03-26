@@ -53,7 +53,9 @@ class OrderControllerTest {
 
         mockMvc.perform(get("/orders/2"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().contentType("text/html;charset=UTF-8"));
+                .andExpect(view().name("not-found"))
+                .andExpect(model().attributeExists("errorMessage"))
+                .andExpect(model().attribute("errorMessage", "Заказ с id [2] не найден"));
     }
 
     // Тест для GET "/orders/{id}" с параметром newOrder=true
@@ -124,6 +126,7 @@ class OrderControllerTest {
         verify(orderService).save(any());
     }
 
+    // Тест для удаления заказа
     @Test
     void testDeleteOrder() throws Exception {
         mockMvc.perform(delete("/orders/5"))
