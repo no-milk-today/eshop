@@ -1,6 +1,7 @@
 package ru.practicum.spring.data.shop.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.spring.data.shop.domain.entity.Order;
 import ru.practicum.spring.data.shop.service.OrderService;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -31,6 +33,15 @@ public class OrderController {
 
         model.addAttribute("order", orderOpt.get());
         return "order"; // Страница с описанием заказа order.html
+    }
+
+    @GetMapping(params = "sortBy")
+    public String orders(@RequestParam("sortBy") String sortBy, Model model) {
+        // Создаем объект сортировки по указанному филду с направлением ASC (по возрастанию)
+        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
+        List<Order> orders = orderService.findAllSorted(sort);
+        model.addAttribute("orders", orders);
+        return "orders-list"; // Отображаем вьюху orders-list.html
     }
 
     @PostMapping

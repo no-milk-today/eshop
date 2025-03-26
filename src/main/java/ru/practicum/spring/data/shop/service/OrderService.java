@@ -1,6 +1,7 @@
 package ru.practicum.spring.data.shop.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 import ru.practicum.spring.data.shop.domain.entity.Order;
 import ru.practicum.spring.data.shop.repository.OrderRepository;
 
@@ -22,6 +23,10 @@ public class OrderService {
 
     public List<Order> findAll() {
         return orderRepository.findAll();
+    }
+
+    public List<Order> findAllSorted(Sort sort) {
+        return orderRepository.findAll(sort);
     }
 
     public Order save(Order order) {

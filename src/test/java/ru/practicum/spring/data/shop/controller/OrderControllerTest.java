@@ -11,6 +11,7 @@ import ru.practicum.spring.data.shop.domain.entity.Order;
 import ru.practicum.spring.data.shop.service.OrderService;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -48,6 +49,29 @@ class OrderControllerTest {
         mockMvc.perform(get("/orders/2"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType("text/html;charset=UTF-8"));
+    }
+
+    @Test
+    void testFindAllSortedOrders() throws Exception {
+        var order1 = new Order();
+        order1.setId(1L);
+        order1.setNumber("#100");
+
+        var order2 = new Order();
+        order2.setId(2L);
+        order2.setNumber("#101");
+
+        // мокаем findAllSorted
+        // Любой переданный параметр Sort удовлетворяет условию any()
+        doReturn(List.of(order1, order2)).when(orderService).findAllSorted(any());
+
+        // Выполняем запрос с параметром sortBy, в данном случае "number"
+        mockMvc.perform(get("/orders").param("sortBy", "number"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("orders-list"));
+
+        // Проверяем, что метод сервиса для сортировки был вызван с каким-либо Sort-объектом
+        verify(orderService).findAllSorted(any());
     }
 
     @Test
