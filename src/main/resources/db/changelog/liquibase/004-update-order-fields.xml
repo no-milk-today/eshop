@@ -1,0 +1,33 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="add_number_and_date_to_orders" author="author">
+        <!-- допускается не более одного элемента preConditions -->
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <columnExists tableName="orders" columnName="number"/>
+                </not>
+                <not>
+                    <columnExists tableName="orders" columnName="date"/>
+                </not>
+            </and>
+        </preConditions>
+
+        <addColumn tableName="orders">
+            <column name="number" type="varchar(255)"/>
+        </addColumn>
+        <addColumn tableName="orders">
+            <column name="date" type="date"/>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="orders" columnName="number"/>
+            <dropColumn tableName="orders" columnName="date"/>
+        </rollback>
+
+    </changeSet>
+</databaseChangeLog>

@@ -12,6 +12,8 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -44,5 +46,8 @@ public class Order {
 
     @Column(nullable = false)
     private LocalDateTime orderDate;
+
+    private String number;
+    private LocalDate date;
 }
 
