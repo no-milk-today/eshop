@@ -18,7 +18,7 @@ public class ProductRepositoryTest extends AbstractDaoTest {
         product.setPrice(9.99);
         product.setDescription("This is a test product");
         product.setImgPath("https://example.com/tshirt_2025.jpg");
-        product.setStock(100);
+        product.setCount(5);
 
         var productFromDB = underTest.save(product);
         assertThat(productFromDB.getId()).isNotNull();

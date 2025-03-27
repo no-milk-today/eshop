@@ -37,5 +37,5 @@ public class Product {
     private String imgPath; // Для хранения пути изображения товара.
 
     @Column(nullable = false)
-    private int stock; // Количество товара на складе.
+    private int count;
 }

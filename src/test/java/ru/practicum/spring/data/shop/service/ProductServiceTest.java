@@ -36,35 +36,35 @@ void testGroupProducts() {
     product1.setPrice(9.99);
     product1.setDescription("This is a test product 1");
     product1.setImgPath("https://example.com/tshirt_2025_1.jpg");
-    product1.setStock(100);
+    product1.setCount(100);
 
     var product2 = new Product();
     product2.setName("Test product 2");
     product2.setPrice(9.99);
     product2.setDescription("This is a test product 2");
     product2.setImgPath("https://example.com/tshirt_2025_2.jpg");
-    product2.setStock(100);
+    product2.setCount(100);
 
     var product3 = new Product();
     product3.setName("Test product 3");
     product3.setPrice(9.99);
     product3.setDescription("This is a test product 3");
     product3.setImgPath("https://example.com/tshirt_2025_3.jpg");
-    product3.setStock(100);
+    product3.setCount(100);
 
     var product4 = new Product();
     product4.setName("Test product 4");
     product4.setPrice(9.99);
     product4.setDescription("This is a test product 4");
     product4.setImgPath("https://example.com/tshirt_2025_4.jpg");
-    product4.setStock(100);
+    product4.setCount(100);
 
     var product5 = new Product();
     product5.setName("Test product 5");
     product5.setPrice(9.99);
     product5.setDescription("This is a test product 5");
     product5.setImgPath("https://example.com/tshirt_2025_5.jpg");
-    product5.setStock(100);
+    product5.setCount(100);
 
     var products = List.of(product1, product2, product3, product4, product5);
 

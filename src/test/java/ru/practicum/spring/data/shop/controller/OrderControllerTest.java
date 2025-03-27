@@ -26,7 +26,7 @@ class OrderControllerTest {
     @Autowired
     MockMvc mockMvc;
 
-    @MockitoBean // Подменяем реализацию сервиса, чтобы управлять поведением
+    @MockitoBean
     OrderService orderService;
 
     // Тест для GET "/orders/{id}" без параметра newOrder (по умолчанию false)

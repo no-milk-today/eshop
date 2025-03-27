@@ -1,15 +1,15 @@
 package ru.practicum.spring.data.shop.controller;
 
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.spring.data.shop.domain.entity.Product;
+import ru.practicum.spring.data.shop.dto.Paging;
 import ru.practicum.spring.data.shop.service.ProductService;
+
+import java.util.List;
 
 @Controller
 public class ProductController {
@@ -45,11 +45,7 @@ public class ProductController {
         model.addAttribute("search", search);
         model.addAttribute("sort", sort);
 
-        Map<String, Object> paging = new HashMap<>();
-        paging.put("pageNumber", pageNumber);
-        paging.put("pageSize", pageSize);
-        paging.put("hasNext", productPage.hasNext());
-        paging.put("hasPrevious", productPage.hasPrevious());
+        Paging paging = new Paging(pageNumber, pageSize, productPage.hasNext(), productPage.hasPrevious());
         model.addAttribute("paging", paging);
 
         return "main"; // Шаблон main.html
