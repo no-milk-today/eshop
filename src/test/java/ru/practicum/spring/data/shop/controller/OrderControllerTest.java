@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.spring.data.shop.domain.entity.Order;
 import ru.practicum.spring.data.shop.service.OrderService;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +35,7 @@ class OrderControllerTest {
         var order = new Order();
         order.setId(3L);
         order.setNumber("#123456");
-        order.setDate(LocalDate.now());
+        order.setOrderDate(LocalDateTime.now());
         doReturn(Optional.of(order)).when(orderService).findById(3L);
 
         mockMvc.perform(get("/orders/3"))
@@ -64,7 +64,7 @@ class OrderControllerTest {
         var order = new Order();
         order.setId(5L);
         order.setNumber("#7890");
-        order.setDate(LocalDate.now());
+        order.setOrderDate(LocalDateTime.now());
         doReturn(Optional.of(order)).when(orderService).findById(5L);
 
         mockMvc.perform(get("/orders/5").param("newOrder", "true"))
