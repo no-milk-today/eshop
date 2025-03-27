@@ -37,5 +37,8 @@ public class Order {
     private LocalDateTime orderDate;
 
     private String number;
-}
 
+    @Column(name = "total_sum")
+    private double totalSum;
+
+}

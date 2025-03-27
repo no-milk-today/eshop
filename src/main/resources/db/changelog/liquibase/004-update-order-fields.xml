@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet id="add_number_and_date_to_orders" author="author">
+    <changeSet id="add_number_and_date_and_sum_to_orders" author="author">
         <!-- допускается не более одного элемента preConditions -->
         <preConditions onFail="MARK_RAN">
             <and>
@@ -13,6 +13,9 @@
                 </not>
                 <not>
                     <columnExists tableName="orders" columnName="date"/>
+                </not>
+                <not>
+                    <columnExists tableName="orders" columnName="total_sum"/>
                 </not>
             </and>
         </preConditions>
@@ -23,10 +26,14 @@
         <addColumn tableName="orders">
             <column name="date" type="date"/>
         </addColumn>
+        <addColumn tableName="orders">
+            <column name="total_sum" type="double"/>
+        </addColumn>
 
         <rollback>
             <dropColumn tableName="orders" columnName="number"/>
             <dropColumn tableName="orders" columnName="date"/>
+            <dropColumn tableName="orders" columnName="total_sum"/>
         </rollback>
 
     </changeSet>

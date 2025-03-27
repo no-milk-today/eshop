@@ -36,4 +36,10 @@ public class OrderService {
     public void deleteById(Long id) {
         orderRepository.deleteById(id);
     }
+
+    public double calculateTotalSum(Order order) {
+        return order.getProducts().stream()
+                .mapToDouble(product -> product.getPrice() * product.getCount())
+                .sum();
+    }
 }

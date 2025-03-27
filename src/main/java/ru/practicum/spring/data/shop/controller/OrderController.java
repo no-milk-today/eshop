@@ -29,7 +29,11 @@ public class OrderController {
         Order orderFromDB = orderService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Заказ с id [%s] не найден".formatted(id)));
 
-        response.setContentType("text/html;charset=UTF-8"); //todo: to be refactored
+        // Calculate the total sum and set it before rendering view
+        var totalSum = orderService.calculateTotalSum(orderFromDB);
+        orderFromDB.setTotalSum(totalSum);
+
+        response.setContentType("text/html;charset=UTF-8");
         model.addAttribute("order", orderFromDB);
         model.addAttribute("newOrder", newOrder);
         return "order"; // Страница order.html
