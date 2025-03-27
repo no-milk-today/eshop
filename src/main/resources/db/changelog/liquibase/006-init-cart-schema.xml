@@ -1,0 +1,114 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Create a sequence for the Cart PK -->
+    <changeSet id="create_cart_sequence" author="author">
+        <preConditions>
+            <not>
+                <sequenceExists sequenceName="cart_sequence"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="cart_sequence" incrementBy="1"/>
+        <rollback>
+            <dropSequence sequenceName="cart_sequence"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Create table with a reference to the user and total price -->
+    <changeSet id="create_carts_table" author="author">
+        <preConditions>
+            <not>
+                <tableExists tableName="carts"/>
+            </not>
+        </preConditions>
+        <createTable tableName="carts">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_price" type="double">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="carts"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Add a FK constraint linking carts to users -->
+    <changeSet id="create_carts_foreign_key_users" author="author">
+        <preConditions>
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_carts_users"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="carts"
+                                 baseColumnNames="user_id"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_carts_users"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="carts" constraintName="fk_carts_users"/>
+        </rollback>
+    </changeSet>
+
+    <!-- cart_products m2m table -->
+    <changeSet id="create_cart_products_table" author="author">
+        <preConditions>
+            <not>
+                <tableExists tableName="cart_products"/>
+            </not>
+        </preConditions>
+        <createTable tableName="cart_products">
+            <column name="cart_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="cart_products"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Create a FK for cart_products referencing carts -->
+    <changeSet id="create_cart_products_foreign_key_carts" author="author">
+        <preConditions>
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_cart_products_carts"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="cart_products"
+                                 baseColumnNames="cart_id"
+                                 referencedTableName="carts"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_cart_products_carts"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="cart_products" constraintName="fk_cart_products_carts"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Create a FK for cart_products referencing products -->
+    <changeSet id="create_cart_products_foreign_key_products" author="author">
+        <preConditions>
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_cart_products_products"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="cart_products"
+                                 baseColumnNames="product_id"
+                                 referencedTableName="products"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_cart_products_products"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="cart_products" constraintName="fk_cart_products_products"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

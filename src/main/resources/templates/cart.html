@@ -13,28 +13,28 @@
     <b>ГЛАВНАЯ &cudarrr;</b>
 </a>
 <table style="width:70%;margin-left:auto;margin-right:auto;">
-    <tr th:each="item : ${items}">
+    <tr th:each="item : ${products}">
         <td>
             <table>
                 <tr>
                     <td>
-                        <img width="300" height="300" th:src="${'http://localhost:8080/'+item.getImgPath()}">
+                        <img width="300" height="300" th:src="${'http://localhost:8080/'+item.imgPath}">
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <b th:text="${item.getTitle()}"></b>
+                        <b th:text="${item.name()}"></b>
                     </td>
                     <td>
-                        <b th:text="${item.getPrice()}+' руб.'"></b>
+                        <b th:text="${item.price()}+' руб.'"></b>
                     </td>
                 </tr>
-                <tr><td th:text="${item.getDescription()}"></td></tr>
+                <tr><td th:text="${item.description()}"></td></tr>
                 <tr>
                     <td>
-                        <form th:action="${'/cart/items/'+item.getId()}" method="post">
+                        <form th:action="${'/cart/items/'+item.id}" method="post">
                             <button name="action" value="minus">-</button>
-                            <span th:text="${item.getCount()}"></span>
+                            <span th:text="${item.count}"></span>
                             <button name="action" value="plus">+</button>
                             <button name="action" value="delete" style="float:right;">&cross;</button>
                         </form>

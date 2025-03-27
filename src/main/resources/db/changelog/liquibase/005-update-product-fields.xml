@@ -4,24 +4,17 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet id="add_imgPath_count_to_products" author="author">
+    <changeSet id="add_imgPath_to_products" author="author">
         <preConditions onFail="MARK_RAN">
             <not>
                 <columnExists tableName="products" columnName="img_path"/>
             </not>
-            <not>
-                <columnExists tableName="products" columnName="count"/>
-            </not>
         </preConditions>
         <addColumn tableName="products">
             <column name="img_path" type="varchar(255)"/>
-            <column name="count" type="int">
-                <constraints nullable="false"/>
-            </column>
         </addColumn>
         <rollback>
             <dropColumn tableName="products" columnName="img_path"/>
-            <dropColumn tableName="products" columnName="count"/>
         </rollback>
     </changeSet>
 

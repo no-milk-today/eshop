@@ -4,9 +4,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.spring.data.shop.domain.entity.Product;
 import ru.practicum.spring.data.shop.dto.Paging;
+import ru.practicum.spring.data.shop.service.CartService;
 import ru.practicum.spring.data.shop.service.ProductService;
 
 import java.util.List;
@@ -15,9 +18,11 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final CartService cartService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, CartService cartService) {
         this.productService = productService;
+        this.cartService = cartService;
     }
 
     // GET "/" – редирект на "/main/items"
@@ -41,6 +46,11 @@ public class ProductController {
         // Группируем товары для плиточного отображения (например, по 3 в ряд)
         List<List<Product>> groupedItems = productService.groupProducts(products);
 
+        // cart info
+        var counts = cartService.getProductCounts();
+        // Проставляем для каждого продукта его count (если не найден — 0)
+        groupedItems.forEach(row -> row.forEach(p -> p.setCount(counts.getOrDefault(p.getId(), 0))));
+
         model.addAttribute("items", groupedItems);
         model.addAttribute("search", search);
         model.addAttribute("sort", sort);
@@ -49,5 +59,12 @@ public class ProductController {
         model.addAttribute("paging", paging);
 
         return "main"; // Шаблон main.html
+    }
+
+    // POST "/main/items/{id}" – изменить количество товара в корзине с main страницы
+    @PostMapping("/main/items/{id}")
+    public String modifyMainItems(@PathVariable Long id, @RequestParam("action") String action) {
+        cartService.modifyItem(id, action);
+        return "redirect:/main/items";
     }
 }

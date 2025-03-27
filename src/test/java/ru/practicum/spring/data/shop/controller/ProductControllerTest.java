@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import ru.practicum.spring.data.shop.domain.entity.Product;
+import ru.practicum.spring.data.shop.service.CartService;
 import ru.practicum.spring.data.shop.service.ProductService;
 
 @WebMvcTest(ProductController.class)
@@ -26,6 +27,9 @@ public class ProductControllerTest {
 
     @MockitoBean
     private ProductService productService;
+
+    @MockitoBean
+    private CartService cartService;
 
     @Test
     void testIndexRedirect() throws Exception {
