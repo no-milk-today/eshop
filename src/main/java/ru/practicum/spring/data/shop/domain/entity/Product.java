@@ -32,5 +32,10 @@ public class Product {
 
     @Column(length = 500)
     private String description;
-}
 
+    @Column(name = "img_path")
+    private String imgPath; // Для хранения пути изображения товара.
+
+    @Column(nullable = false)
+    private int stock; // Количество товара на складе.
+}

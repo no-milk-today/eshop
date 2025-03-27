@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     }
 
     // Обработка 400
-    @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class})
+    @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class, RequestValidationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleIllegalArgumentException() {
         return "invalid-arguments";
