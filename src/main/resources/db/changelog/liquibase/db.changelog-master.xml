@@ -7,5 +7,7 @@
     <include file="001-init-user-schema.xml" relativeToChangelogFile="true"/>
     <include file="002-init-product-schema.xml" relativeToChangelogFile="true"/>
     <include file="003-init-order-schema.xml" relativeToChangelogFile="true"/>
+    <include file="004-update-order-fields.xml" relativeToChangelogFile="true"/>
+    <include file="005-update-product-fields.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

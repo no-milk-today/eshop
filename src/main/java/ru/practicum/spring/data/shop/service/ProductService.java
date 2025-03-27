@@ -1,22 +1,22 @@
 package ru.practicum.spring.data.shop.service;
 
-
 import java.util.ArrayList;
 import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.spring.data.shop.domain.entity.Product;
+import ru.practicum.spring.data.shop.domain.enums.ProductSort;
 import ru.practicum.spring.data.shop.repository.ProductRepository;
 
 @Service
 public class ProductService {
 
     private final ProductRepository productRepository;
-
-    // Количество товаров в одном ряду плитки – можно сделать настраиваемым, здесь возьмем фиксированное значение 3.
+    // Количество товаров в одном ряду плитки (может быть вынесено в конфигурацию)
     private static final int ITEMS_PER_ROW = 3;
 
     public ProductService(ProductRepository productRepository) {
@@ -24,24 +24,20 @@ public class ProductService {
     }
 
     /**
-     * Ищет продукты с учётом поиска, сортировки и пагинации.
-     * Параметры:
-     *   search - строка поиска по name или description
-     *   sort - сортировка: "NO" (без сортировки), "ALPHA" (по имени), "PRICE" (по цене)
-     *   pageNumber - номер страницы (1-based)
-     *   pageSize - размер страницы
+     * Searches for products considering search, sorting, and pagination.
+     * Parameters:
+     *   search - search string for name or description
+     *   sort - sorting: "NO" (no sorting), "ALPHA" (by name), "PRICE" (by price)
+     *   pageNumber - page number (1-based)
+     *   pageSize - page size
      */
     public Page<Product> getProducts(String search, String sort, int pageNumber, int pageSize) {
-        // Определяем сортировку
-        Sort sortOrder;
-        if ("ALPHA".equalsIgnoreCase(sort)) {
-            sortOrder = Sort.by("name").ascending();
-        } else if ("PRICE".equalsIgnoreCase(sort)) {
-            sortOrder = Sort.by("price").ascending();
-        } else {
-            sortOrder = Sort.unsorted();
-        }
-
+        ProductSort sortType = ProductSort.from(sort);
+        Sort sortOrder = switch (sortType) {
+            case ALPHA -> Sort.by("name").ascending();
+            case PRICE -> Sort.by("price").ascending();
+            default -> Sort.unsorted();
+        };
         Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, sortOrder);
 
         if (search == null || search.trim().isEmpty()) {
@@ -52,7 +48,10 @@ public class ProductService {
     }
 
     /**
-     * Разбивает список товаров на группы по ITEMS_PER_ROW для отображения плиткой.
+     * Splits the list of products into groups of ITEMS_PER_ROW for tile display.
+     *
+     * @param products list of products
+     * @return list of rows, where each row is a list of products in one row
      */
     public List<List<Product>> groupProducts(List<Product> products) {
         List<List<Product>> grouped = new ArrayList<>();

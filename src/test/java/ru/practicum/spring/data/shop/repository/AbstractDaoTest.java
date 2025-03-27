@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 // @ActiveProfiles("test") // Чтобы считался application-test.yml
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public abstract class AbstractDaoTest extends AbstractTestcontainers {
 
     @BeforeAll

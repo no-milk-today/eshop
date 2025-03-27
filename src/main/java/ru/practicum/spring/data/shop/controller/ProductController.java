@@ -16,7 +16,6 @@ public class ProductController {
 
     private final ProductService productService;
 
-    // Здесь также реализуем редирект с корневого URL на "/main/items"
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
@@ -27,7 +26,7 @@ public class ProductController {
         return "redirect:/main/items";
     }
 
-    // GET "/main/items" – основная витрина товаров с параметрами
+    // GET "/main/items" – витрина продуктов
     @GetMapping("/main/items")
     public String mainItems(
             @RequestParam(name = "search", defaultValue = "") String search,
@@ -42,7 +41,6 @@ public class ProductController {
         // Группируем товары для плиточного отображения (например, по 3 в ряд)
         List<List<Product>> groupedItems = productService.groupProducts(products);
 
-        // Добавляем все необходимые атрибуты в модель
         model.addAttribute("items", groupedItems);
         model.addAttribute("search", search);
         model.addAttribute("sort", sort);

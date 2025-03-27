@@ -7,7 +7,6 @@ import ru.practicum.spring.data.shop.domain.entity.User;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class UserRepositoryTest extends AbstractDaoTest {
 

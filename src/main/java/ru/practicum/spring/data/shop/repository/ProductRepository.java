@@ -7,6 +7,13 @@ import ru.practicum.spring.data.shop.domain.entity.Product;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // Поиск продуктов по имени или описанию, case insensitive.
+    /**
+     * Searches for products by name or description, case-insensitive.
+     *
+     * @param name the search string for the product name.
+     * @param description the search string for the product description.
+     * @param pageable pagination information.
+     * @return a page of matching products.
+     */
     Page<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String name, String description, Pageable pageable);
 }
