@@ -37,6 +37,7 @@ public class CartController {
 
         List<CartItemDto> productDtos = uniqueProducts.stream()
                 .map(p -> CartItemDto.builder()
+                        .id(p.getId())
                         .name(p.getName())
                         .description(p.getDescription())
                         .imgPath(p.getImgPath())
