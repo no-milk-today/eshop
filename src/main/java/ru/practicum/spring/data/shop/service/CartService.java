@@ -4,17 +4,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.spring.data.shop.domain.entity.Cart;
 import ru.practicum.spring.data.shop.domain.entity.Product;
 import ru.practicum.spring.data.shop.domain.entity.User;
 import ru.practicum.spring.data.shop.domain.enums.CartAction;
+import ru.practicum.spring.data.shop.exception.ResourceNotFoundException;
 import ru.practicum.spring.data.shop.repository.CartRepository;
 import ru.practicum.spring.data.shop.repository.ProductRepository;
 import ru.practicum.spring.data.shop.repository.UserRepository;
 
 @Service
+@Slf4j
 public class CartService {
 
     private final CartRepository cartRepository;
@@ -33,13 +37,20 @@ public class CartService {
     }
 
     public Cart getCartForUser(Long userId) {
+        log.debug("Fetching cart for user with id {}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+                .orElseThrow(() -> {
+                    log.error("User not found with id {}", userId);
+                    return new ResourceNotFoundException("Пользователь не найден");
+                });
+        log.debug("User found: {}", user);
 
         Optional<Cart> optionalCart = cartRepository.findByUser(user);
         if (optionalCart.isPresent()) {
+            log.debug("Cart found for user with id {}", userId);
             return optionalCart.get();
         } else {
+            log.info("No cart found for user with id {}, creating a new one", userId);
             Cart cart = new Cart();
             cart.setUser(user);
             cart.setProducts(new java.util.ArrayList<>());
@@ -52,6 +63,7 @@ public class CartService {
      * Get cart for the default single user.
      */
     public Cart getCart() {
+        log.debug("Fetching cart for default user");
         return getCartForUser(DEFAULT_USER_ID);
     }
 
@@ -63,15 +75,21 @@ public class CartService {
      */
     @Transactional
     public void modifyItem(Long productId, String action) {
+        log.info("Modifying item with id {} using action {}", productId, action);
         Cart cart = getCart();
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Продукт не найден с id " + productId));
+                .orElseThrow(() -> {
+                    log.error("Product not found with id {}", productId);
+                    return new ResourceNotFoundException("Продукт не найден с id " + productId);
+                });
+        log.debug("Product found: {}", product);
 
         // Convert enum
         CartAction cartAction;
         try {
             cartAction = CartAction.valueOf(action.toUpperCase());
         } catch (IllegalArgumentException ex) {
+            log.error("Unknown action: {}", action);
             throw new IllegalArgumentException("Unknown action: " + action);
         }
 
@@ -94,6 +112,7 @@ public class CartService {
         double total = products.stream().mapToDouble(Product::getPrice).sum();
         cart.setTotalPrice(total);
         cartRepository.save(cart);
+        log.info("Cart updated with new total price: {}", total);
     }
 
     /**
@@ -106,6 +125,7 @@ public class CartService {
             Long productId = product.getId();
             counts.put(productId, counts.getOrDefault(productId, 0) + 1);
         }
+        log.debug("Product counts: {}", counts);
         return counts;
     }
 
@@ -114,9 +134,11 @@ public class CartService {
      */
     @Transactional
     public void clearCart() {
+        log.info("Clearing the cart");
         Cart cart = getCart();
         cart.getProducts().clear();
         cart.setTotalPrice(0.0);
         cartRepository.save(cart);
+        log.info("Cart cleared and total price reset");
     }
 }
