@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import ru.practicum.spring.data.shop.domain.entity.Product;
+import ru.practicum.spring.data.shop.dto.ProductDTO;
 import ru.practicum.spring.data.shop.service.CartService;
 import ru.practicum.spring.data.shop.service.ProductService;
 
@@ -41,12 +42,13 @@ public class ProductControllerTest {
     @Test
     void testMainItems() throws Exception {
         // данные для страницы витрины
-        List<Product> products = List.of(new Product(), new Product(), new Product(), new Product());
-        Page<Product> page = new PageImpl<>(products, PageRequest.of(0, 10), products.size());
-        doReturn(page).when(productService).getProducts("", "NO", 1, 10);
-        // Для группировки имитируем две строки по два продукта
-        doReturn(List.of(List.of(new Product(), new Product()), List.of(new Product(), new Product())))
-                .when(productService).groupProducts(products);
+        var products = List.of(new Product(), new Product(), new Product(), new Product());
+        var page = new PageImpl<>(products, PageRequest.of(0, 10), products.size());
+        when(productService.getProducts("", "NO", 1, 10)).thenReturn(page);
+        when(productService.groupProducts(products)).thenReturn(
+                List.of(List.of(new Product(), new Product()), List.of(new Product(), new Product()))
+        );
+        when(cartService.getProductCounts()).thenReturn(Collections.emptyMap());
 
         mockMvc.perform(get("/main/items")
                         .param("search", "")
@@ -71,13 +73,25 @@ public class ProductControllerTest {
         product.setDescription("Description");
         product.setPrice(123.45);
         product.setImgPath("images/test.jpg");
+        product.setCount(0);
 
         when(productService.findById(1L)).thenReturn(Optional.of(product));
+        when(cartService.getProductCounts()).thenReturn(Collections.emptyMap());
 
+        var expectedDto = new ProductDTO(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getImgPath(),
+                0
+        );
+
+        // Act & Assert
         mockMvc.perform(get("/items/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("item"))
                 .andExpect(model().attributeExists("item"))
-                .andExpect(model().attribute("item", product));
+                .andExpect(model().attribute("item", expectedDto));
     }
 }
