@@ -1,5 +1,6 @@
 package ru.practicum.spring.data.shop.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
 import ru.practicum.spring.data.shop.domain.entity.Order;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OrderService {
 
@@ -21,29 +23,37 @@ public class OrderService {
     }
 
     public Optional<Order> findById(Long id) {
+        log.debug("Find order with id: {}", id);
         return orderRepository.findById(id);
     }
 
     public List<Order> findAll() {
+        log.debug("Retrieving all orders");
         return orderRepository.findAll();
     }
 
     public List<Order> findAllSorted(Sort sort) {
+        log.debug("Retrieving all orders sorted by: {}", sort);
         return orderRepository.findAll(sort);
     }
 
     public Order save(Order order) {
+        log.info("Saving order: {}", order);
         return orderRepository.save(order);
     }
 
     public void deleteById(Long id) {
+        log.info("Deleting order with id: {}", id);
         orderRepository.deleteById(id);
+        log.info("Order with id {} deleted", id);
     }
 
     public double calculateTotalSum(Order order) {
-        return order.getProducts().stream()
+        double totalSum = order.getProducts().stream()
                 .mapToDouble(product -> product.getPrice() * product.getCount())
                 .sum();
+        log.debug("Calculated total sum for order with id {}: {}", order.getId(), totalSum);
+        return totalSum;
     }
 
     /**
@@ -53,6 +63,7 @@ public class OrderService {
      * @return уникальные продукты и их количество
      */
     public List<Product> groupProductsWithCounts(List<Product> products) {
+        log.debug("Grouping {} products", products.size());
         Map<Long, Integer> productCounts = products.stream()
                 .collect(Collectors.groupingBy(Product::getId, Collectors.summingInt(p -> 1)));
 
