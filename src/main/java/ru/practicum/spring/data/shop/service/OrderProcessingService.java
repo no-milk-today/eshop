@@ -5,10 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.spring.data.shop.domain.entity.Cart;
 import ru.practicum.spring.data.shop.domain.entity.Order;
+import ru.practicum.spring.data.shop.domain.entity.Product;
 import ru.practicum.spring.data.shop.exception.ResourceNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,9 +35,16 @@ public class OrderProcessingService {
             throw new ResourceNotFoundException("Cart is empty");
         }
 
+        // Retrieve counts and update each product's count from the cart
+        Map<Long, Integer> counts = cartService.getProductCounts();
+        List<Product> products = cart.getProducts().stream()
+                .peek(p -> p.setCount(counts.getOrDefault(p.getId(), 0)))
+                .collect(Collectors.toList());
+        log.debug("Product retrieved: {}, Counts: {}", products, counts);
+
         Order order = new Order();
         order.setUser(cart.getUser());
-        order.setProducts(List.copyOf(cart.getProducts()));
+        order.setProducts(products);
         order.setTotalSum(cart.getTotalPrice());
         order.setOrderDate(LocalDateTime.now());
         order = orderService.save(order);

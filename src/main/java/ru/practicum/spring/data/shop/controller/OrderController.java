@@ -2,12 +2,14 @@ package ru.practicum.spring.data.shop.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.spring.data.shop.domain.entity.Order;
+import ru.practicum.spring.data.shop.domain.entity.Product;
 import ru.practicum.spring.data.shop.exception.ResourceNotFoundException;
 import ru.practicum.spring.data.shop.dto.OrderDTO;
 import ru.practicum.spring.data.shop.service.OrderProcessingService;
@@ -31,22 +33,40 @@ public class OrderController {
         return "redirect:/orders/" + order.getId() + "?newOrder=true";
     }
 
-    // The remaining endpoints remain unchanged
-
     @GetMapping("/orders/{id}")
     public String getOrder(@PathVariable Long id,
                            @RequestParam(name = "newOrder", required = false, defaultValue = "false") boolean newOrder,
                            Model model, HttpServletResponse response) {
         Order orderFromDB = orderService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id [" + id + "] not found"));
+
+        // fetch count for each product
+        List<Product> products = orderFromDB.getProducts();
+        Map<Long, Integer> productCounts = products.stream()
+                .collect(Collectors.groupingBy(Product::getId, Collectors.summingInt(p -> 1)));
+
+        List<Product> groupedProducts = products.stream()
+                .collect(Collectors.toMap(
+                        Product::getId,
+                        p -> p,
+                        (p1, p2) -> p1 // сохраняем первый экземпляр
+                ))
+                .values().stream()
+                .peek(p -> p.setCount(productCounts.getOrDefault(p.getId(), 0)))
+                .collect(Collectors.toList());
+
+        orderFromDB.setProducts(groupedProducts);
+
         double totalSum = orderService.calculateTotalSum(orderFromDB);
         orderFromDB.setTotalSum(totalSum);
+
         response.setContentType("text/html;charset=UTF-8");
         OrderDTO orderDTO = convertToDTO(orderFromDB);
         model.addAttribute("order", orderDTO);
         model.addAttribute("newOrder", newOrder);
         return "order";
     }
+
 
     // GET "/orders" - list orders
     @GetMapping("/orders")

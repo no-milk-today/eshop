@@ -1,9 +1,6 @@
 package ru.practicum.spring.data.shop.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,7 +50,7 @@ public class CartService {
             log.info("No cart found for user with id {}, creating a new one", userId);
             Cart cart = new Cart();
             cart.setUser(user);
-            cart.setProducts(new java.util.ArrayList<>());
+            cart.setProducts(new ArrayList<>());
             cart.setTotalPrice(0.0);
             return cartRepository.save(cart);
         }
