@@ -40,21 +40,8 @@ public class OrderController {
         Order orderFromDB = orderService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id [" + id + "] not found"));
 
-        // fetch count for each product
-        List<Product> products = orderFromDB.getProducts();
-        Map<Long, Integer> productCounts = products.stream()
-                .collect(Collectors.groupingBy(Product::getId, Collectors.summingInt(p -> 1)));
-
-        List<Product> groupedProducts = products.stream()
-                .collect(Collectors.toMap(
-                        Product::getId,
-                        p -> p,
-                        (p1, p2) -> p1 // сохраняем первый экземпляр
-                ))
-                .values().stream()
-                .peek(p -> p.setCount(productCounts.getOrDefault(p.getId(), 0)))
-                .collect(Collectors.toList());
-
+        // fetch unique products with count
+        List<Product> groupedProducts = groupProductsWithCounts(orderFromDB.getProducts());
         orderFromDB.setProducts(groupedProducts);
 
         double totalSum = orderService.calculateTotalSum(orderFromDB);
@@ -67,6 +54,26 @@ public class OrderController {
         return "order";
     }
 
+    /**
+     * Фетчит уникальные продукты и их количество
+     *
+     * @param products initial products
+     * @return уникальные продукты и их количество
+     */
+    private List<Product> groupProductsWithCounts(List<Product> products) {
+        Map<Long, Integer> productCounts = products.stream()
+                .collect(Collectors.groupingBy(Product::getId, Collectors.summingInt(p -> 1)));
+
+        return products.stream()
+                .collect(Collectors.toMap(
+                        Product::getId,
+                        p -> p,
+                        (p1, p2) -> p1 // сохраняем первый экземпляр
+                ))
+                .values().stream()
+                .peek(p -> p.setCount(productCounts.getOrDefault(p.getId(), 0)))
+                .collect(Collectors.toList());
+    }
 
     // GET "/orders" - list orders
     @GetMapping("/orders")
