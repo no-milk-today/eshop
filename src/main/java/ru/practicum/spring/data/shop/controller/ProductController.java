@@ -75,6 +75,11 @@ public class ProductController {
         var product = productService.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Продукт с id " + id + " не найден")
         );
+
+        // Fetch cart counts and update the product count field
+        var counts = cartService.getProductCounts();
+        product.setCount(counts.getOrDefault(product.getId(), 0));
+
         model.addAttribute("item", product);
         return "item";
     }
