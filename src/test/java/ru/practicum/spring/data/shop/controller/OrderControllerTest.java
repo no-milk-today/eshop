@@ -4,10 +4,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.spring.data.shop.domain.entity.Cart;
 import ru.practicum.spring.data.shop.domain.entity.Order;
+import ru.practicum.spring.data.shop.domain.entity.Product;
+import ru.practicum.spring.data.shop.domain.entity.User;
+import ru.practicum.spring.data.shop.service.CartService;
 import ru.practicum.spring.data.shop.service.OrderService;
 
 import java.time.LocalDateTime;
@@ -27,15 +30,30 @@ class OrderControllerTest {
     MockMvc mockMvc;
 
     @MockitoBean
-    OrderService orderService;
+    private OrderService orderService;
 
-    // Тест для GET "/orders/{id}" без параметра newOrder (по умолчанию false)
+    @MockitoBean
+    private CartService cartService;
+
+    // Helper method to build an Order with a default User
+    private Order buildOrder(Long id, String number) {
+        var order = new Order();
+        order.setId(id);
+        order.setNumber(number);
+        order.setOrderDate(LocalDateTime.now());
+        // Set a default user
+        var user = new User();
+        user.setId(1L);
+        order.setUser(user);
+        order.setTotalSum(100.0);
+        order.setProducts(List.of());
+        return order;
+    }
+
+    // GET "/orders/{id}" without newOrder parameter
     @Test
     void testFindByIdFound() throws Exception {
-        var order = new Order();
-        order.setId(3L);
-        order.setNumber("#123456");
-        order.setOrderDate(LocalDateTime.now());
+        var order = buildOrder(3L, "#123456");
         doReturn(Optional.of(order)).when(orderService).findById(3L);
 
         mockMvc.perform(get("/orders/3"))
@@ -46,7 +64,7 @@ class OrderControllerTest {
                 .andExpect(model().attribute("newOrder", false));
     }
 
-    // Тест для GET "/orders/{id}" когда заказ не найден
+    // GET "/orders/{id}" when order is not found
     @Test
     void testFindByIdNotFound() throws Exception {
         doReturn(Optional.empty()).when(orderService).findById(2L);
@@ -55,16 +73,13 @@ class OrderControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(view().name("not-found"))
                 .andExpect(model().attributeExists("errorMessage"))
-                .andExpect(model().attribute("errorMessage", "Заказ с id [2] не найден"));
+                .andExpect(model().attribute("errorMessage", "Order with id [2] not found"));
     }
 
-    // Тест для GET "/orders/{id}" с параметром newOrder=true
+    // GET "/orders/{id}" with newOrder parameter set to true
     @Test
     void testGetOrderWithNewOrderParameter() throws Exception {
-        var order = new Order();
-        order.setId(5L);
-        order.setNumber("#7890");
-        order.setOrderDate(LocalDateTime.now());
+        var order = buildOrder(5L, "#7890");
         doReturn(Optional.of(order)).when(orderService).findById(5L);
 
         mockMvc.perform(get("/orders/5").param("newOrder", "true"))
@@ -74,13 +89,11 @@ class OrderControllerTest {
                 .andExpect(model().attribute("newOrder", true));
     }
 
-    // Тест для GET "/orders" без параметра сортировки – используется orderService.findAll()
+    // GET "/orders" without a sort parameter
     @Test
     void testOrdersListWithoutSortParam() throws Exception {
-        var order1 = new Order();
-        order1.setId(10L);
-        var order2 = new Order();
-        order2.setId(11L);
+        var order1 = buildOrder(10L, "#10");
+        var order2 = buildOrder(11L, "#11");
         doReturn(List.of(order1, order2)).when(orderService).findAll();
 
         mockMvc.perform(get("/orders"))
@@ -90,21 +103,13 @@ class OrderControllerTest {
         verify(orderService).findAll();
     }
 
-    // Тест для GET "/orders" с параметром sortBy – используется orderService.findAllSorted(...)
+    // GET "/orders" with a sortBy parameter
     @Test
     void testFindAllSortedOrders() throws Exception {
-        var order1 = new Order();
-        order1.setId(1L);
-        order1.setNumber("#100");
-
-        var order2 = new Order();
-        order2.setId(2L);
-        order2.setNumber("#101");
-
-        // Мокаем вызов метода сортировки; любой переданный параметр Sort удовлетворяет условию any()
+        var order1 = buildOrder(1L, "#100");
+        var order2 = buildOrder(2L, "#101");
         doReturn(List.of(order1, order2)).when(orderService).findAllSorted(any());
 
-        // Выполняем запрос с параметром sortBy, в данном случае "number"
         mockMvc.perform(get("/orders").param("sortBy", "number"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("orders-list"))
@@ -112,27 +117,33 @@ class OrderControllerTest {
         verify(orderService).findAllSorted(any());
     }
 
-    // Тест для создания заказа
+    // POST "/buy" endpoint for creating an order and clearing the cart
     @Test
-    void testCreateOrder() throws Exception {
-        mockMvc.perform(post("/orders")
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .queryParam("id", "3")
-                        .queryParam("number", "#654321")
-                )
-                .andExpect(status().is3xxRedirection())
-                .andExpect(header().string(HttpHeaders.LOCATION, "/orders"));
+    void testBuyOrder() throws Exception {
+        var user = new User();
+        user.setId(1L);
+        var cart = new Cart();
+        cart.setUser(user);
+        cart.setProducts(List.of(new Product(1L, "Test Product", 10.0, "Description", "img.jpg", 0)));
+        cart.setTotalPrice(10.0);
 
+        doReturn(cart).when(cartService).getCart();
+
+        var order = buildOrder(7L, "#777");
+        doReturn(order).when(orderService).save(any());
+
+        mockMvc.perform(post("/buy"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/orders/7?newOrder=true"));
         verify(orderService).save(any());
     }
 
-    // Тест для удаления заказа
+    // DELETE "/orders/{id}" endpoint for deleting an order
     @Test
     void testDeleteOrder() throws Exception {
         mockMvc.perform(delete("/orders/5"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(header().stringValues(HttpHeaders.LOCATION, "/orders"));
-
+                .andExpect(header().string(HttpHeaders.LOCATION, "/orders"));
         verify(orderService).deleteById(5L);
     }
 }

@@ -49,7 +49,7 @@ public class CartService {
     }
 
     /**
-     * Получить корзину для пользователя по дефолту (он всегда один).
+     * Get cart for the default single user.
      */
     public Cart getCart() {
         return getCartForUser(DEFAULT_USER_ID);
@@ -91,15 +91,13 @@ public class CartService {
             default:
                 throw new IllegalArgumentException("Unknown action: " + action);
         }
-        // Пересчитываем суммарную стоимость корзины
         double total = products.stream().mapToDouble(Product::getPrice).sum();
         cart.setTotalPrice(total);
         cartRepository.save(cart);
     }
 
     /**
-     * Вычисляет количество каждого продукта в корзине.
-     * @return Map, где ключ — id товара, значение — count.
+     * Calculate the quantity of each product in the cart.
      */
     public Map<Long, Integer> getProductCounts() {
         Cart cart = getCart();
@@ -109,5 +107,16 @@ public class CartService {
             counts.put(productId, counts.getOrDefault(productId, 0) + 1);
         }
         return counts;
+    }
+
+    /**
+     * Clear the cart by removing all products and resetting the total price.
+     */
+    @Transactional
+    public void clearCart() {
+        Cart cart = getCart();
+        cart.getProducts().clear();
+        cart.setTotalPrice(0.0);
+        cartRepository.save(cart);
     }
 }
