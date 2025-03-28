@@ -6,11 +6,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.spring.data.shop.domain.entity.Cart;
 import ru.practicum.spring.data.shop.domain.entity.Order;
-import ru.practicum.spring.data.shop.domain.entity.Product;
 import ru.practicum.spring.data.shop.domain.entity.User;
-import ru.practicum.spring.data.shop.service.CartService;
+import ru.practicum.spring.data.shop.service.OrderProcessingService;
 import ru.practicum.spring.data.shop.service.OrderService;
 
 import java.time.LocalDateTime;
@@ -27,13 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OrderControllerTest {
 
     @Autowired
-    MockMvc mockMvc;
+    private MockMvc mockMvc;
 
     @MockitoBean
     private OrderService orderService;
 
     @MockitoBean
-    private CartService cartService;
+    private OrderProcessingService orderProcessingService;
 
     // Helper method to build an Order with a default User
     private Order buildOrder(Long id, String number) {
@@ -117,25 +115,17 @@ class OrderControllerTest {
         verify(orderService).findAllSorted(any());
     }
 
-    // POST "/buy" endpoint for creating an order and clearing the cart
+    // POST "/buy" endpoint for creating an order by processing the cart
     @Test
     void testBuyOrder() throws Exception {
-        var user = new User();
-        user.setId(1L);
-        var cart = new Cart();
-        cart.setUser(user);
-        cart.setProducts(List.of(new Product(1L, "Test Product", 10.0, "Description", "img.jpg", 0)));
-        cart.setTotalPrice(10.0);
-
-        doReturn(cart).when(cartService).getCart();
-
         var order = buildOrder(7L, "#777");
-        doReturn(order).when(orderService).save(any());
+        // Mock the processOrder method from OrderProcessingService
+        doReturn(order).when(orderProcessingService).processOrder();
 
         mockMvc.perform(post("/buy"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/orders/7?newOrder=true"));
-        verify(orderService).save(any());
+        verify(orderProcessingService).processOrder();
     }
 
     // DELETE "/orders/{id}" endpoint for deleting an order

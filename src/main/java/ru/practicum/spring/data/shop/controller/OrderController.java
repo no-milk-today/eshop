@@ -1,7 +1,6 @@
 package ru.practicum.spring.data.shop.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
@@ -10,41 +9,30 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.spring.data.shop.domain.entity.Order;
 import ru.practicum.spring.data.shop.exception.ResourceNotFoundException;
-import ru.practicum.spring.data.shop.service.CartService;
-import ru.practicum.spring.data.shop.service.OrderService;
 import ru.practicum.spring.data.shop.dto.OrderDTO;
+import ru.practicum.spring.data.shop.service.OrderProcessingService;
+import ru.practicum.spring.data.shop.service.OrderService;
 
 @Controller
 public class OrderController {
 
     private final OrderService orderService;
-    private final CartService cartService;
+    private final OrderProcessingService orderProcessingService;
 
-    public OrderController(OrderService orderService, CartService cartService) {
+    public OrderController(OrderService orderService, OrderProcessingService orderProcessingService) {
         this.orderService = orderService;
-        this.cartService = cartService;
+        this.orderProcessingService = orderProcessingService;
     }
 
     // POST "/buy" – buy products in the cart, create an order, clear cart and redirect to order details
     @PostMapping("/buy")
     public String buy() {
-        var cart = cartService.getCart();
-
-        if (cart.getProducts().isEmpty()) {
-            return "redirect:/cart/items";
-        }
-
-        Order order = new Order();
-        order.setUser(cart.getUser());
-        order.setProducts(List.copyOf(cart.getProducts()));
-        order.setTotalSum(cart.getTotalPrice());
-        order.setOrderDate(LocalDateTime.now());
-        order = orderService.save(order);
-        cartService.clearCart();
+        Order order = orderProcessingService.processOrder();
         return "redirect:/orders/" + order.getId() + "?newOrder=true";
     }
 
-    // GET "/orders/{id}" - order details
+    // The remaining endpoints remain unchanged
+
     @GetMapping("/orders/{id}")
     public String getOrder(@PathVariable Long id,
                            @RequestParam(name = "newOrder", required = false, defaultValue = "false") boolean newOrder,
@@ -53,7 +41,6 @@ public class OrderController {
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id [" + id + "] not found"));
         double totalSum = orderService.calculateTotalSum(orderFromDB);
         orderFromDB.setTotalSum(totalSum);
-
         response.setContentType("text/html;charset=UTF-8");
         OrderDTO orderDTO = convertToDTO(orderFromDB);
         model.addAttribute("order", orderDTO);
