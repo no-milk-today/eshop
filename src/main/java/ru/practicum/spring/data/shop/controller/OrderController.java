@@ -2,7 +2,6 @@ package ru.practicum.spring.data.shop.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
@@ -62,6 +61,14 @@ public class OrderController {
         } else {
             orders = orderService.findAll();
         }
+
+        orders.forEach(order -> {
+            List<Product> groupedProducts = orderService.groupProductsWithCounts(order.getProducts());
+            order.setProducts(groupedProducts);
+            double totalSum = orderService.calculateTotalSum(order);
+            order.setTotalSum(totalSum);
+        });
+
         List<OrderDTO> orderDTOs = orders.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
