@@ -2,6 +2,7 @@ package ru.practicum.spring.data.shop.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -59,5 +60,9 @@ public class ProductService {
             grouped.add(new ArrayList<>(products.subList(i, Math.min(i + ITEMS_PER_ROW, products.size()))));
         }
         return grouped;
+    }
+
+    public Optional<Product> findById(Long id) {
+        return productRepository.findById(id);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.spring.data.shop.domain.entity.Product;
 import ru.practicum.spring.data.shop.dto.Paging;
+import ru.practicum.spring.data.shop.exception.ResourceNotFoundException;
 import ru.practicum.spring.data.shop.service.CartService;
 import ru.practicum.spring.data.shop.service.ProductService;
 
@@ -66,5 +67,15 @@ public class ProductController {
     public String modifyMainItems(@PathVariable Long id, @RequestParam("action") String action) {
         cartService.modifyItem(id, action);
         return "redirect:/main/items";
+    }
+
+    // Новый эндпоинт: GET "/items/{id}" – отображение деталей продукта
+    @GetMapping("/items/{id}")
+    public String getSingleItem(@PathVariable Long id, Model model) {
+        var product = productService.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Продукт с id " + id + " не найден")
+        );
+        model.addAttribute("item", product);
+        return "item";
     }
 }

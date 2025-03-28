@@ -1,11 +1,11 @@
 package ru.practicum.spring.data.shop.controller;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,5 +61,23 @@ public class ProductControllerTest {
                 .andExpect(model().attributeExists("paging"));
 
         verify(productService).getProducts("", "NO", 1, 10);
+    }
+
+    @Test
+    void testGetSingleItemFound() throws Exception {
+        var product = new Product();
+        product.setId(1L);
+        product.setName("Test Product");
+        product.setDescription("Description");
+        product.setPrice(123.45);
+        product.setImgPath("images/test.jpg");
+
+        when(productService.findById(1L)).thenReturn(Optional.of(product));
+
+        mockMvc.perform(get("/items/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("item"))
+                .andExpect(model().attributeExists("item"))
+                .andExpect(model().attribute("item", product));
     }
 }
