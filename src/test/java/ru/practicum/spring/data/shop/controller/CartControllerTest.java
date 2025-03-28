@@ -46,7 +46,7 @@ public class CartControllerTest {
         mockMvc.perform(get("/cart/items"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("cart"))
-                .andExpect(model().attributeExists("items"))
+                .andExpect(model().attributeExists("products"))
                 .andExpect(model().attribute("total", 40.0))
                 .andExpect(model().attributeExists("empty"));
 
