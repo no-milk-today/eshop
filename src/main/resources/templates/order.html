@@ -32,7 +32,7 @@
                             <!-- Формируем ссылку по id товара -->
                             <a th:href="@{'/items/' + ${item.id}}">
                                 <!-- Получаем путь к изображению, используем свойство imgPath -->
-                                <img width="300" height="300" th:src="${'http://localhost:8080/' + item.imgPath}" />
+                                <img width="300" height="300" th:src="${item.imgPath}" />
                             </a>
                         </td>
                     </tr>
@@ -41,7 +41,7 @@
                             <b th:text="${item.name}"></b>
                         </td>
                         <td>
-                            <b th:text="${item.getCount()} + ' шт.'"></b>
+                            <b th:text="${item.count} + ' шт.'"></b>
                         </td>
                         <td>
                             <b th:text="${item.price * item.count} + ' руб.'"></b>
