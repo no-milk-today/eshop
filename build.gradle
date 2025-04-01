@@ -38,6 +38,9 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok' // видимо без нее никак
 
     implementation 'org.liquibase:liquibase-core:4.25.1'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'io.r2dbc:r2dbc-h2:1.0.0.RELEASE'
 }
 
 tasks.named('test') {
