@@ -59,6 +59,13 @@ public class DeleteUpdateApplication {
                 .apply(update("active", Boolean.FALSE))
                 .subscribe(it -> log.info("Обновлено строк: {}", it)); // 6
 
+        // SELECT всех записей перед удалением
+        template.select(Person.class)
+                .all()
+                .doOnNext(person -> log.info("Запись: id={}, username={}, active={}",
+                        person.getId(), person.getUsername(), person.getActive()))
+                .blockLast(); // Ожидаем завершения выборки
+
         // DELETE FROM person WHERE active is true
         template.delete(Person.class)
                 .matching(query(where("active").isTrue()))
