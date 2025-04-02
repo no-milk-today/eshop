@@ -1,6 +1,10 @@
 package com.example.reactive;
 
 import io.r2dbc.spi.ConnectionFactories;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import reactor.core.publisher.Flux;
@@ -14,42 +18,22 @@ import static org.springframework.data.relational.core.query.Update.update;
 @Slf4j
 public class DeleteUpdateApplication {
 
+    @Builder
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     static class Person {
         private Long id;
         private String username;
         private Boolean active;
-
-        public Long getId() {
-            return id;
-        }
-
-        public void setId(Long id) {
-            this.id = id;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public Boolean getActive() {
-            return active;
-        }
-
-        public void setActive(Boolean active) {
-            this.active = active;
-        }
     }
 
     static Person testPerson(Long id) {
-        var p = new Person();
-        p.setId(id);
-        p.setUsername("Test #" + id);
-        p.setActive(Boolean.TRUE);
-        return p;
+        return Person.builder()
+                .id(id)
+                .username("Test #" + id)
+                .active(Boolean.TRUE)
+                .build();
     }
 
     public static void main(String[] args) {
@@ -79,7 +63,7 @@ public class DeleteUpdateApplication {
         template.delete(Person.class)
                 .matching(query(where("active").isTrue()))
                 .all()
-                .subscribe(it -> log.info("Удалено строк: {}",it)); // 4
+                .subscribe(it -> log.info("Удалено строк: {}", it)); // 4
     }
 
 }
