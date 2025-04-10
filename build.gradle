@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc' // стартер для работы с базой, используя Spring Data R2DBC
 	runtimeOnly 'com.mysql:mysql-connector-j' // драйвер для подключения к MySQL
 	runtimeOnly 'io.asyncer:r2dbc-mysql'  // Дополнительный R2dbc драйвер, чья версия управляется Spring Boot плагином https://github.com/asyncer-io/r2dbc-mysql
