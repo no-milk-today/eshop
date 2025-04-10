@@ -1,0 +1,12 @@
+spring:
+  ## Не указывается
+  #  r2dbc:
+  #    url: r2dbc:mysql://db-address:3306/test # URL подключения к БД
+  #    username: test # имя пользователя
+  #    password: test # пароль
+  sql:
+    init:
+      mode: always # для инициализации схемы с использованием schema.sql
+logging:
+  level:
+    io.asyncer.r2dbc.mysql: DEBUG # в этот раз будем логировать запросы напрямую из r2dbc-драйвера
