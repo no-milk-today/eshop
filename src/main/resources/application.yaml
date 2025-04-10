@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: re-shop
+
   ## Не указывается
   #  r2dbc:
   #    url: r2dbc:mysql://db-address:3306/test # URL подключения к БД
