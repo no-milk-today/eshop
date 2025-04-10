@@ -3,14 +3,13 @@ package com.yandex.reactive.testcontainers.testconainers_demo_raactive.repositor
 import com.yandex.reactive.testcontainers.testconainers_demo_raactive.AbstractDaoTest;
 import com.yandex.reactive.testcontainers.testconainers_demo_raactive.domain.entity.Cart;
 import com.yandex.reactive.testcontainers.testconainers_demo_raactive.domain.entity.User;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
-@Disabled
+
 public class CartRepositoryTest extends AbstractDaoTest {
 
     @Autowired
@@ -21,7 +20,6 @@ public class CartRepositoryTest extends AbstractDaoTest {
 
     @Test
     void testCreateCartAndFindByUser() {
-        // Создаем пользователя
         var user = User.builder()
                 .username("testuser")
                 .password("password")
@@ -31,10 +29,9 @@ public class CartRepositoryTest extends AbstractDaoTest {
         // Реактивная цепочка: сохраняем пользователя, затем корзину и затем ищем корзину по пользователю.
         userRepository.save(user)
                 .flatMap(userFromDB -> {
-                    // Создаем корзину с сохраненным пользователем
                     var cart = new Cart();
                     cart.setUserId(userFromDB.getId());
-                    cart.setProducts(new ArrayList<>());  // для реактивного подхода ManyToMany будем подгружать данные отдельно
+                    cart.setProducts(new ArrayList<>());
                     cart.setTotalPrice(0.0);
 
                     return underTest.save(cart)
