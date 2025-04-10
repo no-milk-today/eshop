@@ -1,7 +1,7 @@
-package com.yandex.reactive.testcontainers.testconainers_demo_raactive;
+package com.yandex.reactive.testcontainers.testconainers_demo_raactive.repository;
 
+import com.yandex.reactive.testcontainers.testconainers_demo_raactive.AbstractDaoTest;
 import com.yandex.reactive.testcontainers.testconainers_demo_raactive.domain.entity.Product;
-import com.yandex.reactive.testcontainers.testconainers_demo_raactive.repository.ProductRepository;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
