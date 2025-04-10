@@ -1,12 +1,12 @@
 package com.yandex.reactive.testcontainers.testconainers_demo_raactive;
 
+import com.yandex.reactive.testcontainers.testconainers_demo_raactive.domain.entity.User;
+import com.yandex.reactive.testcontainers.testconainers_demo_raactive.repository.UserRepository;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-public class UserRepositoryTest extends AbstractTestContainerTest {
+public class UserRepositoryTest extends AbstractDaoTest {
 
     @Autowired
     private UserRepository underTest;

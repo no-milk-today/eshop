@@ -1,4 +1,4 @@
-package com.yandex.reactive.testcontainers.testconainers_demo_raactive;
+package com.yandex.reactive.testcontainers.testconainers_demo_raactive.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
