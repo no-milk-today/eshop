@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 
-@ControllerAdvice
+// @ControllerAdvice will be replaced with routers
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
