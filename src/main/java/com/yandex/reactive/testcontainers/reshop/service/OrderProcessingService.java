@@ -34,7 +34,7 @@ public class OrderProcessingService {
                         log.warn("Cart is empty, cannot process order");
                         return Mono.error(new ResourceNotFoundException("Cart is empty"));
                     }
-                    // Получаем карту с количеством товаров
+                    // Получаем Cart с количеством товаров
                     return cartService.getProductCounts()
                             .flatMap(counts -> {
                                 // Обновляем для каждого продукта его количество
