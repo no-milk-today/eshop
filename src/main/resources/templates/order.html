@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Заказ</title>
+</head>
+
+<body>
+    <a href="/orders" style="float:right;">
+        <b>ЗАКАЗЫ &cudarrr;</b>
+    </a>
+    <a href="/cart/items" style="float:right;">
+        <b>КОРЗИНА &cudarrr;</b>
+    </a>
+    <a href="/main/items" style="float:right;">
+        <b>ГЛАВНАЯ &cudarrr;</b>
+    </a>
+    <h1 style="text-align:center" th:if="${newOrder}">Поздравляем! Успешная покупка! &#128578;</h1>
+    <table style="width:70%;margin-left:auto;margin-right:auto;">
+        <tr>
+            <td>
+                <h2 th:text="${'Заказ №' + order.id}"></h2>
+            </td>
+        </tr>
+
+        <!-- order.products вместо order.items() -->
+        <tr th:each="item : ${order.products}">
+            <td>
+                <table>
+                    <tr>
+                        <td>
+                            <!-- Формируем ссылку по id товара -->
+                            <a th:href="@{'/items/' + ${item.id}}">
+                                <!-- Получаем путь к изображению, используем свойство imgPath -->
+                                <img width="300" height="300" th:src="${item.imgPath}" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <b th:text="${item.name}"></b>
+                        </td>
+                        <td>
+                            <b th:text="${item.count} + ' шт.'"></b>
+                        </td>
+                        <td>
+                            <b th:text="${item.price * item.count} + ' руб.'"></b>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h3 th:text="${'Сумма: ' + order.totalSum} + ' руб.'"></h3>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
