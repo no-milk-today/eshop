@@ -19,8 +19,10 @@ Reactive Web-приложение на Spring Boot, представляющее
 1. **Поднять docker compose:**
 
    ```bash
+   export MYSQL_ROOT_PASSWORD=yourDesiredRootPassword
    export MYSQL_USER=yourDesiredUsername
    export MYSQL_PASSWORD=yourDesiredPassword
+   export MYSQL_PASSWORD=reshop # будет создана когда контейнер поднимется
    docker compose up -d
    ```
 
@@ -29,8 +31,8 @@ Reactive Web-приложение на Spring Boot, представляющее
 Прокинуть env переменные `MYSQL_USER=значение` и `MYSQL_PASSWORD=значение`.
 
 ```bash
-   $env:MYSQL_USER="значение"
-   $env:MYSQL_PASSWORD="значение"
+   $env:MYSQL_USER="значение" # лучше root
+   $env:MYSQL_PASSWORD="значение" # и пассворд для рута
 ```
 
 - **создание БД и таблиц** находятся в файле `resources/db/sql/createDBAndTables.sql`.
