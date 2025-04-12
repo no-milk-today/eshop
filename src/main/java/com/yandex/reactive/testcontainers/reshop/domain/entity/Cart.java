@@ -8,6 +8,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.data.annotation.Transient;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -23,7 +25,7 @@ public class Cart {
     private Long userId;
 
     @Transient
-    private List<Product> products;
+    private List<Product> products = new ArrayList<>();
 
     @Column("total_price")
     private double totalPrice;

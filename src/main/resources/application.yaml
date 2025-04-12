@@ -9,6 +9,12 @@ spring:
   sql:
     init:
       mode: never
+
+server:
+  port: 8081
+  netty:
+    connection-timeout: 30s
+
 logging:
   level:
     io.asyncer.r2dbc.mysql: DEBUG # в этот раз будем логировать запросы напрямую из r2dbc-драйвера
