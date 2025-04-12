@@ -7,10 +7,12 @@ Reactive Web-приложение на Spring Boot, представляющее
 - **Java 21**, **Spring Boot 3.4.4 (Reactive)**
 - **Gradle** – сборка проекта
 - **Spring WebFlux** – реактивный стек для веб-приложений
+- **Functional Endpoints** – (повторяют логику контроллеров из v1 версии)
 - **Thymeleaf** – серверный шаблонизатор HTML с поддержкой JavaScript
 - **Spring Data R2DBC** – реактивное взаимодействие с базой данных
 - **MySQL 8.0** – база данных
 - **JUnit 5** – модульные и интеграционные тесты
+- **WebTestClient** - для тестирования functional endpoint-ов
 - **Docker**
 - **Testcontainers** – тестирование с использованием контейнеров
 
