@@ -15,6 +15,6 @@ server:
   netty:
     connection-timeout: 30s
 
-logging:
-  level:
-    io.asyncer.r2dbc.mysql: DEBUG # в этот раз будем логировать запросы напрямую из r2dbc-драйвера
+#logging:
+#  level:
+#    io.asyncer.r2dbc.mysql: DEBUG # в этот раз будем логировать запросы напрямую из r2dbc-драйвера
