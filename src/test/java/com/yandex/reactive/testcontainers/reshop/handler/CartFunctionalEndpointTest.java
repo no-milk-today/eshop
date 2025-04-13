@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.web.reactive.function.BodyInserters.fromFormData;
 
 @Import({CartRouter.class, CartHandler.class})
 @WebFluxTest
@@ -65,8 +66,11 @@ public class CartFunctionalEndpointTest {
         when(cartService.modifyItem(eq(100L), eq("plus")))
                 .thenReturn(Mono.just(new Cart()));
 
+
         webTestClient.post()
-                .uri("/cart/items/100?action=plus")
+                .uri("/cart/items/100")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(fromFormData("action", "plus"))
                 .exchange()
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/cart/items");

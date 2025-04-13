@@ -75,13 +75,21 @@ public class ProductHandler {
                 .flatMap(m -> ServerResponse.ok().render("main", m.asMap()));
     }
 
+    /**
+     * See: <a href="https://stackoverflow.com/questions/50209230/restcontroller-with-spring-webflux-required-parameter-is-not-present">
+     * Handling Required Parameters in Spring WebFlux</a>.
+     */
     // POST "/main/items/{id}" – изменить количество товара в корзине.
     // После модификации редирект на "/main/items"
     public Mono<ServerResponse> modifyMainItems(ServerRequest request) {
         Long id = Long.valueOf(request.pathVariable("id"));
-        String action = request.queryParam("action").orElse("");
-        return cartService.modifyItem(id, action)
-                .then(ServerResponse.temporaryRedirect(URI.create("/main/items")).build());
+        return request.formData().doOnNext(data -> log.debug("FormData: {}", data))
+                .flatMap(formData -> {
+                    String action = formData.getFirst("action");
+                    log.info("action: {}", action);
+                    return cartService.modifyItem(id, action)
+                            .then(ServerResponse.temporaryRedirect(URI.create("/main/items")).build());
+                });
     }
 
     // GET "/items/{id}" – отображение деталей продукта.

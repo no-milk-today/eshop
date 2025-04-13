@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.web.reactive.function.BodyInserters.fromFormData;
 
 //todo: из коробки не видит роутер и хенждер, проресерчить вопрос
 @Import({ProductRouter.class, ProductHandler.class})
@@ -97,7 +98,9 @@ public class ProductFunctionalEndpointTest {
                 .thenReturn(Mono.just(new Cart()));
 
         webTestClient.post()
-                .uri("/main/items/1?action=plus")
+                .uri("/main/items/1")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(fromFormData("action", "plus"))
                 .exchange()
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/main/items");

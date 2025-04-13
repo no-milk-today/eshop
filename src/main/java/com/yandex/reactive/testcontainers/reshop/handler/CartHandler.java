@@ -70,8 +70,11 @@ public class CartHandler {
      */
     public Mono<ServerResponse> modifyCartItem(ServerRequest request) {
         Long id = Long.valueOf(request.pathVariable("id"));
-        String action = request.queryParam("action").orElse("");
-        return cartService.modifyItem(id, action)
-                .then(ServerResponse.temporaryRedirect(URI.create("/cart/items")).build());
+        return request.formData()
+                .flatMap(formData -> {
+                    String action = formData.getFirst("action");
+                    return cartService.modifyItem(id, action)
+                            .then(ServerResponse.temporaryRedirect(URI.create("/cart/items")).build());
+                });
     }
 }
