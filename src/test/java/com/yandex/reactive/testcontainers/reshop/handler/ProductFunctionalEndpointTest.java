@@ -86,7 +86,7 @@ public class ProductFunctionalEndpointTest {
         List<List<Product>> groupedProducts = Collections.singletonList(Collections.singletonList(product));
         when(productService.getProducts(eq(""), eq("NO"), eq(1), eq(10)))
                 .thenReturn(Flux.just(product));
-        when(productService.groupProducts(ArgumentMatchers.any(Flux.class)))
+        when(productService.groupProducts(ArgumentMatchers.<Flux<Product>>any()))
                 .thenReturn(Mono.just(groupedProducts));
 
         // пустая корзина
@@ -192,7 +192,7 @@ public class ProductFunctionalEndpointTest {
         List<List<Product>> groupedProducts = Collections.singletonList(Collections.singletonList(product));
         when(productService.getProducts(eq(""), eq("NO"), eq(1), eq(10)))
                 .thenReturn(Flux.just(product));
-        when(productService.groupProducts(ArgumentMatchers.any(Flux.class)))
+        when(productService.groupProducts(ArgumentMatchers.<Flux<Product>>any()))
                 .thenReturn(Mono.just(groupedProducts));
 
         // Симулируем корзину и записи join-таблицы, чтобы getProductCounts() вернуло count = 2 для продукта id=1
