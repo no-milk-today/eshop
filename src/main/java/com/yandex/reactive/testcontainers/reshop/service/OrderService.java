@@ -1,7 +1,9 @@
 package com.yandex.reactive.testcontainers.reshop.service;
 
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
+import com.yandex.reactive.testcontainers.reshop.domain.entity.OrderProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
+import com.yandex.reactive.testcontainers.reshop.repository.OrderProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -18,9 +20,12 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderProductRepository orderProductRepository;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository,
+                        OrderProductRepository orderProductRepository) {
         this.orderRepository = orderRepository;
+        this.orderProductRepository = orderProductRepository;
     }
 
     public Mono<Order> findById(Long id) {
@@ -38,9 +43,30 @@ public class OrderService {
         return orderRepository.findAll(sort);
     }
 
+    /**
+     * Сохраняет заказ и регистрирует связи с продуктами в таблице order_products.
+     *
+     * @param order заказ с заполненным списком продуктов (order.getProducts())
+     * @return Mono<Order> с сохранённым заказом
+     */
     public Mono<Order> save(Order order) {
         log.info("Saving order: {}", order);
-        return orderRepository.save(order);
+        return orderRepository.save(order)
+                .flatMap(savedOrder -> {
+                    log.debug("Order saved with id: {}", savedOrder.getId());
+                    List<Product> products = order.getProducts();
+                    if (products == null || products.isEmpty()) {
+                        return Mono.just(savedOrder);
+                    }
+                    // Для каждого продукта сохраняем запись в таблице order_products
+                    return Flux.fromIterable(products)
+                            .flatMap(product ->
+                                    orderProductRepository.save(
+                                            new OrderProduct(null, savedOrder.getId(), product.getId())
+                                    )
+                            )
+                            .then(Mono.just(savedOrder));
+                });
     }
 
     public Mono<Void> deleteById(Long id) {
@@ -50,8 +76,11 @@ public class OrderService {
     }
 
     /**
-     * Рассчитывает общую сумму заказа.
-     * Работает синхронно, принимает уже загруженный Order.
+     * Рассчитывает итоговую сумму заказа.
+     * Умножает цену каждого продукта на его count и суммирует.
+     *
+     * @param order с заполненным списком продуктов
+     * @return итоговая сумма
      */
     public double calculateTotalSum(Order order) {
         double totalSum = order.getProducts().stream()
