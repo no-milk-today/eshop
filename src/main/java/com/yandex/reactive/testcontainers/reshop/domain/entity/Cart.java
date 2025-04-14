@@ -25,7 +25,7 @@ public class Cart {
     private Long userId;
 
     @Transient
-    private List<Product> products = new ArrayList<>();
+    private List<Product> products; // Загружаем вручную через join-таблицу
 
     @Column("total_price")
     private double totalPrice;

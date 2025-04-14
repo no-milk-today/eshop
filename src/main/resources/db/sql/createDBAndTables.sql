@@ -45,11 +45,14 @@ CREATE TABLE IF NOT EXISTS carts (
     CONSTRAINT fk_carts_users FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Drop the existing cart_products table if it exists
+DROP TABLE IF EXISTS cart_products;
+
 -- Schema for m2m relationship between carts and products
 CREATE TABLE IF NOT EXISTS cart_products (
     cart_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
-    PRIMARY KEY (cart_id, product_id),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     CONSTRAINT fk_cart_products_carts FOREIGN KEY (cart_id) REFERENCES carts(id),
     CONSTRAINT fk_cart_products_products FOREIGN KEY (product_id) REFERENCES products(id)
 );

@@ -9,9 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -29,99 +26,6 @@ public class ProductServiceTest {
     @InjectMocks
     private ProductService underTest;
 
-    /**
-     * Тест группировки товаров на строки по ITEMS_PER_ROW.
-     * При вызове groupProducts происходит внутренний вызов getProducts,
-     * который использует методы productRepository.findAllProducts(...) и countProducts().
-     */
-    @Test
-    void testGroupProducts() {
-        var product1 = new Product();
-        product1.setName("Test product 1");
-        product1.setPrice(9.99);
-        product1.setDescription("This is a test product 1");
-        product1.setImgPath("https://example.com/tshirt_2025_1.jpg");
-
-        var product2 = new Product();
-        product2.setName("Test product 2");
-        product2.setPrice(9.99);
-        product2.setDescription("This is a test product 2");
-        product2.setImgPath("https://example.com/tshirt_2025_2.jpg");
-
-        var product3 = new Product();
-        product3.setName("Test product 3");
-        product3.setPrice(9.99);
-        product3.setDescription("This is a test product 3");
-        product3.setImgPath("https://example.com/tshirt_2025_3.jpg");
-
-        var product4 = new Product();
-        product4.setName("Test product 4");
-        product4.setPrice(9.99);
-        product4.setDescription("This is a test product 4");
-        product4.setImgPath("https://example.com/tshirt_2025_4.jpg");
-
-        var product5 = new Product();
-        product5.setName("Test product 5");
-        product5.setPrice(9.99);
-        product5.setDescription("This is a test product 5");
-        product5.setImgPath("https://example.com/tshirt_2025_5.jpg");
-
-        List<Product> products = List.of(product1, product2, product3, product4, product5);
-        // Для страницы с pageNumber = 1 и pageSize = 5 => offset = 0, limit = 5
-        when(productRepository.findAllProducts(5, 0))
-                .thenReturn(Flux.fromIterable(products));
-        when(productRepository.countProducts())
-                .thenReturn(Mono.just((long) products.size()));
-
-        Mono<List<List<Product>>> groupedMono = underTest.groupProducts("", "NO", 1, 5);
-        List<List<Product>> grouped = groupedMono.block();
-
-        // 5 продуктов разбиваются на 2 группы, первая содержит 3 продукта, вторая — 2
-        assertThat(grouped).hasSize(2);
-        assertThat(grouped.get(0)).hasSize(3);
-        assertThat(grouped.get(1)).hasSize(2);
-    }
-
-    /**
-     * Тест проверки метода getProducts без строки поиска и сортировки "NO".
-     * тут сервис должен вызвать методы productRepository.findAllProducts(...) и countProducts().
-     */
-    @Test
-    void testGetProductsWithoutSearchAndSort() {
-        List<Product> productList = List.of(new Product(), new Product());
-        // Для pageNumber = 1, pageSize = 10, offset = 0, limit = 10.
-        when(productRepository.findAllProducts(10, 0))
-                .thenReturn(Flux.fromIterable(productList));
-        when(productRepository.countProducts())
-                .thenReturn(Mono.just((long) productList.size()));
-
-        Mono<Page<Product>> resultMono = underTest.getProducts("", "NO", 1, 10);
-        Page<Product> result = resultMono.block();
-
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getPageable()).isEqualTo(PageRequest.of(0, 10, Sort.unsorted()));
-    }
-
-    /**
-     * Тест проверки метода getProducts с сортировкой "ALPHA".
-     * Тут сортировка формируется внутри сервиса, а для пустого поиска вызывается метод findAllProducts.
-     */
-    @Test
-    void testGetProductsWithAlphaSort() {
-        List<Product> productList = List.of(new Product(), new Product());
-        when(productRepository.findAllProducts(10, 0))
-                .thenReturn(Flux.fromIterable(productList));
-        when(productRepository.countProducts())
-                .thenReturn(Mono.just((long) productList.size()));
-
-        Mono<Page<Product>> resultMono = underTest.getProducts("", "ALPHA", 1, 10);
-        Page<Product> result = resultMono.block();
-
-        assertThat(result.getContent()).hasSize(2);
-        // Проверим, что Pageable сформирован с сортировкой по name
-        assertThat(result.getPageable()).isEqualTo(PageRequest.of(0, 10, Sort.by("name").ascending()));
-    }
-
     @Test
     void testFindById() {
         var product = new Product();
@@ -138,5 +42,74 @@ public class ProductServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Test product");
+    }
+
+    @Test
+    void testGetProductsWithoutSearch() {
+        List<Product> products = List.of(
+                new Product(1L, "Test product 1", 1.2, "testdescription1", "https://example.com/test1.jpg", 0),
+                new Product(2L, "Test product 2", 2.5, "testdescription2", "https://example.com/test2.jpg", 0),
+                new Product(3L, "Test product 3", 3.0, "testdescription3", "https://example.com/test4.jpg", 0),
+                new Product(4L, "Test product 5", 4.0, "testdescription4", "https://example.com/test5.jpg", 0)
+        );
+
+        when(productRepository.findAll()).thenReturn(Flux.fromIterable(products));
+
+        var result = underTest.getProducts("", "ALPHA", 1, 3).collectList().block();
+
+        assertThat(result)
+                .isNotNull()
+                .hasSize(3)
+                .extracting(Product::getName)
+                .containsExactly("Test product 1", "Test product 2", "Test product 3");
+    }
+
+    @Test
+    void testGetProductsSortedByPrice() {
+        List<Product> products = List.of(
+                new Product(1L, "Test product 1", 3.0, "testdescription1", "https://example.com/test1.jpg", 0),
+                new Product(2L, "Test product 2", 1.2, "testdescription2", "https://example.com/test2.jpg", 0),
+                new Product(3L, "Test product 3", 4.0, "testdescription3", "https://example.com/test3.jpg", 0),
+                new Product(4L, "Test product 4", 2.5, "testdescription4", "https://example.com/test4.jpg", 0)
+        );
+
+        when(productRepository.findAll()).thenReturn(Flux.fromIterable(products));
+
+        var result = underTest.getProducts("", "PRICE", 1, 4).collectList().block();
+
+        assertThat(result)
+                .isNotNull()
+                .hasSize(4)
+                .extracting(Product::getPrice)
+                .containsExactly(1.2, 2.5, 3.0, 4.0);
+    }
+
+    @Test
+    void testGroupProducts() {
+        List<Product> products = List.of(
+                new Product(1L, "A", 1.0, "desc", "img", 0),
+                new Product(2L, "B", 2.0, "desc", "img", 0),
+                new Product(3L, "C", 3.0, "desc", "img", 0),
+                new Product(4L, "D", 4.0, "desc", "img", 0),
+                new Product(5L, "E", 5.0, "desc", "img", 0)
+        );
+        Flux<Product> flux = Flux.fromIterable(products);
+
+        // groupProducts собирает список продуктов в ряды по 3 штуки
+        var grouped = underTest.groupProducts(flux).block();
+
+        assertThat(grouped)
+                .withFailMessage("Ожидалось 2 ряда продуктов, но результат пустой")
+                .isNotEmpty()
+                .withFailMessage("Ожидалось 2 ряда продуктов")
+                .hasSize(2);
+
+        assertThat(grouped.get(0))
+                .withFailMessage("В первом ряду должно быть 3 продукта")
+                .hasSize(3);
+
+        assertThat(grouped.get(1))
+                .withFailMessage("Во втором ряду должно быть 2 продукта")
+                .hasSize(2);
     }
 }

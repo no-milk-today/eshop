@@ -2,12 +2,11 @@ package com.yandex.reactive.testcontainers.reshop.repository;
 
 import com.yandex.reactive.testcontainers.reshop.AbstractDaoTest;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +26,7 @@ public class ProductRepositoryTest extends AbstractDaoTest {
 
         underTest.save(product)
                 .doOnNext(productFromDB ->
-                        AssertionsForClassTypes.assertThat(productFromDB)
+                        assertThat(productFromDB)
                                 .withFailMessage("Result of save should not be null")
                                 .isNotNull()
                                 .extracting(Product::getId)
@@ -49,10 +48,10 @@ public class ProductRepositoryTest extends AbstractDaoTest {
                 .flatMap(productFromDB ->
                         underTest.findById(productFromDB.getId())
                                 .doOnNext(foundProduct -> {
-                                    AssertionsForClassTypes.assertThat(foundProduct)
+                                    assertThat(foundProduct)
                                             .withFailMessage("Found product should not be null")
                                             .isNotNull();
-                                    AssertionsForClassTypes.assertThat(foundProduct.getName())
+                                    assertThat(foundProduct.getName())
                                             .withFailMessage("Product name should match")
                                             .isEqualTo("Test product findById");
                                 })
@@ -61,87 +60,41 @@ public class ProductRepositoryTest extends AbstractDaoTest {
     }
 
     @Test
-    void testFindAllProductsWithPagination() {
-        List<Product> products = new ArrayList<>();
-        for (int i = 1; i <= 5; i++) {
-            var product = new Product();
-            product.setName("Product " + i);
-            product.setPrice(10.0 * i);
-            product.setDescription("Description " + i);
-            product.setImgPath("https://example.com/image" + i + ".jpg");
-            products.add(product);
-        }
-
-        // Сохраняем все продукты
-        var savedProductsFlux = Flux.fromIterable(products)
-                .flatMap(underTest::save);
-
-        savedProductsFlux.collectList()
-                .flatMap(savedList -> {
-                    int limit = 2;
-                    int offset = 0;
-                    return underTest.findAllProducts(limit, offset).collectList()
-                            .flatMap(paginatedProducts -> {
-                                assertThat(paginatedProducts)
-                                        .withFailMessage("Expected 2 products on the first page")
-                                        .hasSize(2);
-                                return underTest.countProducts()
-                                        .map(totalCount -> {
-                                            // Проверяем, что общее количество продуктов как минимум равно количеству сохраненных
-                                            assertThat(totalCount)
-                                                    .withFailMessage("Total count should be at least the number of saved products")
-                                                    .isGreaterThanOrEqualTo((long) savedList.size());
-                                            return paginatedProducts;
-                                        });
-                            });
-                })
-                .block();
-    }
-
-    @Test
-    void testSearchProductsWithPagination() {
+    void testFindByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase() {
         var product1 = new Product();
-        product1.setName("Unique Product");
-        product1.setPrice(15.0);
-        product1.setDescription("This is a unique product description");
-        product1.setImgPath("https://example.com/unique.jpg");
+        product1.setName("Awesome T-shirt");
+        product1.setPrice(10.0);
+        product1.setDescription("High quality cotton t-shirt");
+        product1.setImgPath("http://example.com/tshirt.jpg");
 
         var product2 = new Product();
-        product2.setName("Another Product");
-        product2.setPrice(20.0);
-        product2.setDescription("This product is quite unique in features");
-        product2.setImgPath("https://example.com/another.jpg");
+        product2.setName("Cool Hat");
+        product2.setPrice(15.0);
+        product2.setDescription("Stylish summer hat");
+        product2.setImgPath("http://example.com/hat.jpg");
 
         var product3 = new Product();
-        product3.setName("Regular Product");
-        product3.setPrice(25.0);
-        product3.setDescription("Regular product description");
-        product3.setImgPath("https://example.com/regular.jpg");
+        product3.setName("Regular Shoes");
+        product3.setPrice(20.0);
+        product3.setDescription("Comfortable running shoes");
+        product3.setImgPath("http://example.com/shoes.jpg");
 
-        // Сохраняем продактс
-        Flux<Product> savedFlux = Flux.just(product1, product2, product3)
-                .flatMap(each -> underTest.save(each));
+        Mono<Product> mono1 = underTest.save(product1);
+        Mono<Product> mono2 = underTest.save(product2);
+        Mono<Product> mono3 = underTest.save(product3);
 
-        savedFlux.collectList()
-                .flatMap(savedList -> {
-                    // поиск по строке "unique" с limit 10 и offset 0
-                    int limit = 10;
-                    int offset = 0;
-                    return underTest.searchProducts("unique", limit, offset).collectList()
-                            .flatMap(searchResults -> {
-                                // Ожидаем, что найдутся продукты, содержащие "unique" (учитывается как в имени, так и в описании)
-                                assertThat(searchResults)
-                                        .withFailMessage("Search results should not be empty")
-                                        .isNotEmpty();
-                                return underTest.countProductsBySearch("unique")
-                                        .map(searchCount -> {
-                                            assertThat(searchCount)
-                                                    .withFailMessage("Count from search should equal the number of search results")
-                                                    .isEqualTo((long) searchResults.size());
-                                            return searchResults;
-                                        });
-                            });
-                })
+        // все три products сохранены в БД до выполнения findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase
+        Flux.merge(mono1, mono2, mono3)
+                .collectList()
                 .block();
+
+        List<Product> products = underTest
+                .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase("t-shirt", "t-shirt")
+                .collectList()
+                .block();
+
+        assertThat(products).isNotEmpty();
+        assertThat(products)
+                .anyMatch(product -> product.getName().equalsIgnoreCase("Awesome T-shirt"));
     }
 }
