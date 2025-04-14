@@ -84,7 +84,7 @@ public class CartFunctionalEndpointTest {
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(fromFormData("action", "plus"))
                 .exchange()
-                .expectStatus().is3xxRedirection()
+                .expectStatus().isSeeOther()
                 .expectHeader().valueEquals("Location", "/cart/items");
 
         verify(cartService).modifyItem(100L, "plus");

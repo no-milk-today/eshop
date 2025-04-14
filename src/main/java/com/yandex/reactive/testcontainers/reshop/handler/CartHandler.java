@@ -101,7 +101,7 @@ public class CartHandler {
                 return ServerResponse.badRequest().build();
             }
             return cartService.modifyItem(productId, action)
-                    .then(ServerResponse.temporaryRedirect(URI.create("/cart/items")).build());
+                    .then(ServerResponse.seeOther(URI.create("/cart/items")).build());
         });
     }
 }
