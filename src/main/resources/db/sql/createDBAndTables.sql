@@ -28,11 +28,14 @@ CREATE TABLE IF NOT EXISTS orders (
     CONSTRAINT fk_orders_users FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Drop the existing order_products table if it exists
+DROP TABLE IF EXISTS order_products;
+
 -- Schema for m2m relationship between orders and products
 CREATE TABLE IF NOT EXISTS order_products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
-    PRIMARY KEY (order_id, product_id),
     CONSTRAINT fk_order_products_orders FOREIGN KEY (order_id) REFERENCES orders(id),
     CONSTRAINT fk_order_products_products FOREIGN KEY (product_id) REFERENCES products(id)
 );

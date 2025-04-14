@@ -28,9 +28,9 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- Schema for m2m relationship between orders and products
 CREATE TABLE IF NOT EXISTS order_products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
-    PRIMARY KEY (order_id, product_id),
     CONSTRAINT fk_order_products_orders FOREIGN KEY (order_id) REFERENCES orders(id),
     CONSTRAINT fk_order_products_products FOREIGN KEY (product_id) REFERENCES products(id)
 );
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS carts (
 CREATE TABLE IF NOT EXISTS cart_products (
     cart_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
-    PRIMARY KEY (cart_id, product_id),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     CONSTRAINT fk_cart_products_carts FOREIGN KEY (cart_id) REFERENCES carts(id),
     CONSTRAINT fk_cart_products_products FOREIGN KEY (product_id) REFERENCES products(id)
 );
