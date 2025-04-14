@@ -67,7 +67,7 @@ public class ProductFunctionalEndpointTest {
                 //.bodyValue("action=plus") // можно и так
                 .body(fromFormData("action", "plus"))
                 .exchange()
-                .expectStatus().is3xxRedirection()
+                .expectStatus().isSeeOther()
                 .expectHeader().valueEquals("Location", "/main/items");
 
         verify(cartService).modifyItem(1L, "plus");

@@ -112,7 +112,7 @@ public class ProductHandler {
                 return ServerResponse.badRequest().build();
             }
             return cartService.modifyItem(productId, action)
-                    .then(ServerResponse.temporaryRedirect(URI.create("/main/items")).build());
+                    .then(ServerResponse.seeOther(URI.create("/main/items")).build());
         });
     }
 
