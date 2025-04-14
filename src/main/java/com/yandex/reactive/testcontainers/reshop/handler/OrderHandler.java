@@ -51,20 +51,18 @@ public class OrderHandler {
         boolean newOrder = Boolean.parseBoolean(request.queryParam("newOrder").orElse("false"));
         Model model = new ConcurrentModel();
 
-        return orderService.findById(id)
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException("Order with id [" + id + "] not found")))
+        return orderService.findByIdWithProducts(id)
                 .flatMap(order -> {
-                    // fetch unique products with count
                     List<Product> groupedProducts = orderService.groupProductsWithCounts(order.getProducts());
                     order.setProducts(groupedProducts);
                     double totalSum = orderService.calculateTotalSum(order);
                     order.setTotalSum(totalSum);
-
                     OrderDTO orderDTO = convertToDTO(order);
                     model.addAttribute("order", orderDTO);
                     model.addAttribute("newOrder", newOrder);
                     return ServerResponse.ok().render("order", model.asMap());
-                });
+                })
+                .switchIfEmpty(ServerResponse.notFound().build());
     }
 
     /**

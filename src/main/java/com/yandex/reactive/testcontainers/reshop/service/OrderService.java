@@ -3,6 +3,7 @@ package com.yandex.reactive.testcontainers.reshop.service;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.OrderProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
+import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +22,13 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderProductRepository orderProductRepository;
+    private final ProductService productService;
 
     public OrderService(OrderRepository orderRepository,
-                        OrderProductRepository orderProductRepository) {
+                        OrderProductRepository orderProductRepository, ProductService productService) {
         this.orderRepository = orderRepository;
         this.orderProductRepository = orderProductRepository;
+        this.productService = productService;
     }
 
     public Mono<Order> findById(Long id) {
@@ -98,10 +101,12 @@ public class OrderService {
      * @return список уникальных продуктов с установленным количеством
      */
     public List<Product> groupProductsWithCounts(List<Product> products) {
+        if (products == null) {
+            log.error("Grouping 0 products (products list is null)");
+        }
         log.debug("Grouping {} products", products.size());
         Map<Long, Integer> productCounts = products.stream()
                 .collect(Collectors.groupingBy(Product::getId, Collectors.summingInt(p -> 1)));
-
         return products.stream()
                 .collect(Collectors.toMap(
                         Product::getId,
@@ -111,6 +116,20 @@ public class OrderService {
                 .values().stream()
                 .peek(p -> p.setCount(productCounts.getOrDefault(p.getId(), 0)))
                 .collect(Collectors.toList());
+    }
+
+    public Mono<Order> findByIdWithProducts(Long id) {
+        return orderRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException("Order with id [" + id + "] not found")))
+                .flatMap(order ->
+                        orderProductRepository.findByOrderId(order.getId())
+                                .flatMap(op -> productService.findById(op.getProductId()))
+                                .collectList()
+                                .map(products -> {
+                                    order.setProducts(products);
+                                    return order;
+                                })
+                );
     }
 }
 

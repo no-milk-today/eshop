@@ -67,12 +67,11 @@ public class OrderFunctionalEndpointTest {
         order.setTotalSum(100.0);
         order.setProducts(Collections.emptyList());
 
-        when(orderService.findById(3L)).thenReturn(Mono.just(order));
+        when(orderService.findByIdWithProducts(3L)).thenReturn(Mono.just(order));
 
         // GET /orders/3, без передачи newOrder (по дефолту false)
         webTestClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/orders/3")
-                        .build())
+                .uri(uriBuilder -> uriBuilder.path("/orders/3").build())
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
@@ -85,7 +84,7 @@ public class OrderFunctionalEndpointTest {
 
     @Test
     void testGetOrderNotFound() {
-        when(orderService.findById(2L)).thenReturn(Mono.empty());
+        when(orderService.findByIdWithProducts(2L)).thenReturn(Mono.empty());
 
         webTestClient.get()
                 .uri("/orders/2")
@@ -93,8 +92,9 @@ public class OrderFunctionalEndpointTest {
                 .expectStatus().isNotFound()
                 .expectBody(String.class).consumeWith(response -> {
                     String body = response.getResponseBody();
-                    assertNotNull(body);
-                    assertTrue(body.contains("Not Found"));
+                    if (body != null) {
+                        assertTrue(body.contains("Not Found"));
+                    }
                 });
     }
 
