@@ -38,7 +38,7 @@ public class OrderHandler {
     public Mono<ServerResponse> buy(ServerRequest request) {
         return orderProcessingService.processOrder()
                 .flatMap(order ->
-                        ServerResponse.temporaryRedirect(
+                        ServerResponse.seeOther(
                                         URI.create("/orders/" + order.getId() + "?newOrder=true"))
                                 .build()
                 );
