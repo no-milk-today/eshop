@@ -13,6 +13,7 @@ import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -71,26 +72,27 @@ public class OrderHandler {
     public Mono<ServerResponse> orders(ServerRequest request) {
         String sortBy = request.queryParam("sortBy").orElse(null);
         Model model = new ConcurrentModel();
-        Mono<List<Order>> ordersMono;
-        if (sortBy != null && !sortBy.isBlank()) {
-            ordersMono = orderService.findAllSorted(Sort.by(Sort.Direction.ASC, sortBy))
-                    .collectList();
-        } else {
-            ordersMono = orderService.findAll().collectList();
-        }
-        return ordersMono.flatMap(orders -> {
-            orders.forEach(order -> {
-                List<Product> groupedProducts = orderService.groupProductsWithCounts(order.getProducts());
-                order.setProducts(groupedProducts);
-                double totalSum = orderService.calculateTotalSum(order);
-                order.setTotalSum(totalSum);
-            });
-            List<OrderDTO> orderDTOs = orders.stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-            model.addAttribute("orders", orderDTOs);
-            return ServerResponse.ok().render("orders-list", model.asMap());
-        });
+
+        Flux<Order> ordersFlux = (sortBy != null && !sortBy.isBlank())
+                ? orderService.findAllSorted(Sort.by(Sort.Direction.ASC, sortBy))
+                : orderService.findAll();
+
+        return ordersFlux
+                .flatMap(order -> orderService.findByIdWithProducts(order.getId()))
+                .collectList()
+                .flatMap(orders -> {
+                    orders.forEach(order -> {
+                        List<Product> groupedProducts = orderService.groupProductsWithCounts(order.getProducts());
+                        order.setProducts(groupedProducts);
+                        double totalSum = orderService.calculateTotalSum(order);
+                        order.setTotalSum(totalSum);
+                    });
+                    List<OrderDTO> orderDTOs = orders.stream()
+                            .map(this::convertToDTO)
+                            .collect(Collectors.toList());
+                    model.addAttribute("orders", orderDTOs);
+                    return ServerResponse.ok().render("orders-list", model.asMap());
+                });
     }
 
     private OrderDTO convertToDTO(Order order) {

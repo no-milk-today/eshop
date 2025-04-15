@@ -114,6 +114,9 @@ public class OrderFunctionalEndpointTest {
         // Если sortBy нету, вызывается findAll()
         when(orderService.findAll()).thenReturn(Flux.just(order1, order2));
 
+        when(orderService.findByIdWithProducts(10L)).thenReturn(Mono.just(order1));
+        when(orderService.findByIdWithProducts(11L)).thenReturn(Mono.just(order2));
+
         webTestClient.get()
                 .uri("/orders")
                 .exchange()
@@ -143,6 +146,9 @@ public class OrderFunctionalEndpointTest {
 
         // sortBy есть, вызывается findAllSorted
         when(orderService.findAllSorted(any(Sort.class))).thenReturn(Flux.just(order1, order2));
+        // For each order, the handler calls findByIdWithProducts.
+        when(orderService.findByIdWithProducts(1L)).thenReturn(Mono.just(order1));
+        when(orderService.findByIdWithProducts(2L)).thenReturn(Mono.just(order2));
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/orders")

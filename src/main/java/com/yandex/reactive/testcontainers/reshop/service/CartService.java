@@ -132,7 +132,25 @@ public class CartService {
                 .then();
     }
 
-//    В методе modifyItem осуществляется добавление (PLUS), удаление одного (MINUS) или всех (DELETE) записей из join‑таблицы через CartProductRepository.
-//    После изменений вызывается метод updateCartTotal, который агрегирует цену всех продуктов (считывая данные через join‑таблицу) и обновляет поле totalPrice в корзине.
+
+    /**
+     * Очищает корзину, удаляя все записи из join‑таблицы и сбрасывая итоговую сумму.
+     */
+    public Mono<Void> clearCart() {
+        log.info("Clearing the cart");
+        return getCart()
+                .flatMap(cart ->
+                        cartProductRepository.findByCartId(cart.getId())
+                                .flatMap(cp -> cartProductRepository.deleteById(cp.getId()))
+                                .then(Mono.defer(() -> {
+                                    cart.setTotalPrice(0.0);
+                                    return cartRepository.save(cart);
+                                }))
+                )
+                .doOnSuccess(updatedCart ->
+                        log.info("Cart cleared and total price reset"))
+                .then();
+    }
+
 }
 

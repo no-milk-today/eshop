@@ -1,86 +1,106 @@
 package com.yandex.reactive.testcontainers.reshop.service;
 
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Cart;
+import com.yandex.reactive.testcontainers.reshop.domain.entity.CartProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
-import com.yandex.reactive.testcontainers.reshop.domain.entity.User;
 import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
+import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
+import com.yandex.reactive.testcontainers.reshop.repository.OrderProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OrderProcessingServiceTest {
 
     @Mock
+    private CartService cartService;
+
+    @Mock
     private OrderService orderService;
 
     @Mock
-    private CartService cartService;
+    private ProductService productService;
+
+    @Mock
+    private OrderProductRepository orderProductRepository;
+
+    @Mock
+    private CartProductRepository cartProductRepository;
 
     @InjectMocks
     private OrderProcessingService underTest;
 
     @Test
-    void testProcessOrder_success() {
+    void testProcessOrder_Success() {
         var cart = new Cart();
-        var user = new User();
-        user.setId(1L);
-        cart.setUserId(user.getId());
-
-        var product = new Product();
-        product.setId(1L);
-        product.setName("Test Product");
-        product.setPrice(10.0);
-        product.setCount(0);
-        cart.setProducts(List.of(product));
-        cart.setTotalPrice(10.0);
+        cart.setId(1L);
+        cart.setUserId(1L);
+        cart.setTotalPrice(100.0);
 
         when(cartService.getCart()).thenReturn(Mono.just(cart));
 
-        Map<Long, Integer> counts = new HashMap<>();
-        counts.put(1L, 1);
-        when(cartService.getProductCounts()).thenReturn(Mono.just(counts));
+        var cp1 = new CartProduct();
+        cp1.setProductId(10L);
+        var cp2 = new CartProduct();
+        cp2.setProductId(10L);
+        var cp3 = new CartProduct();
+        cp3.setProductId(20L);
+
+        when(cartProductRepository.findByCartId(anyLong()))
+                .thenReturn(Flux.just(cp1, cp2, cp3));
+
+        var product10 = new Product();
+        product10.setId(10L);
+        product10.setPrice(30.0);
+
+        var product20 = new Product();
+        product20.setId(20L);
+        product20.setPrice(40.0);
+
+        when(productService.findById(10L)).thenReturn(Mono.just(product10));
+        when(productService.findById(20L)).thenReturn(Mono.just(product20));
 
         var orderFromDB = new Order();
-        orderFromDB.setId(7L);
-        orderFromDB.setUserId(user.getId());
-        orderFromDB.setProducts(List.copyOf(cart.getProducts()));
+        orderFromDB.setId(5L);
+        orderFromDB.setUserId(cart.getUserId());
         orderFromDB.setTotalSum(cart.getTotalPrice());
-        orderFromDB.setOrderDate(LocalDateTime.now());
         when(orderService.save(any(Order.class))).thenReturn(Mono.just(orderFromDB));
 
         when(cartService.clearCart()).thenReturn(Mono.empty());
 
-        Order order = underTest.processOrder().block();
+        Order result = underTest.processOrder().block();
 
-        assertThat(order).isNotNull();
-        assertThat(order.getId()).isEqualTo(7L);
-        verify(orderService).save(any(Order.class));
-        verify(cartService).clearCart();
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(5L);
+        assertThat(result.getUserId()).isEqualTo(cart.getUserId());
     }
 
     @Test
-    void processOrder_ResourceNotFoundException() {
-        var emptyCart = new Cart();
-        emptyCart.setProducts(List.of());
-        when(cartService.getCart()).thenReturn(Mono.just(emptyCart));
+    void testProcessOrder_EmptyCartProducts() {
+        var cart = new Cart();
+        cart.setId(1L);
+        cart.setUserId(1L);
+        cart.setTotalPrice(0.0);
 
-        assertThrows(ResourceNotFoundException.class, () -> underTest.processOrder().block());
-        verify(orderService, never()).save(any(Order.class));
-        verify(cartService, never()).clearCart();
+        when(cartService.getCart()).thenReturn(Mono.just(cart));
+        when(cartProductRepository.findByCartId(anyLong())).thenReturn(Flux.empty());
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> underTest.processOrder().block()
+        );
+        assertThat(exception.getMessage()).isEqualTo("Cart is empty");
     }
 }
