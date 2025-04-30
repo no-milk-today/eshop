@@ -5,17 +5,21 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
 import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
+@EnableCaching
 public class SpringDataRedisApplication implements ApplicationRunner {
 
     @Autowired
     private PopularArticlesCacheService popularArticlesCacheService;
     @Autowired
     private CarPriceRepository carPriceRepository;
+    @Autowired
+    private IPriceService priceService;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -46,6 +50,27 @@ public class SpringDataRedisApplication implements ApplicationRunner {
         System.out.println("Retrieving the article again to extend TTL...");
         cachedArticle = popularArticlesCacheService.getArticle(isbn);
         System.out.println("Cached article content after extending TTL: " + cachedArticle);
+
+        // Price service caching usage.
+        String carName = "BMW";
+        BigDecimal computedPrice = priceService.computePrice(carName, () -> {
+            System.out.println("Value missing in cache. Computing price for " + carName + "...");
+            return BigDecimal.valueOf(20000);
+        });
+        System.out.println("Computed price for " + carName + ": " + computedPrice);
+
+        // Update cached price.
+        BigDecimal updatedPrice = BigDecimal.valueOf(21000);
+        priceService.upsertPriceInCache(carName, updatedPrice);
+        System.out.println("Updated cached price for " + carName + ": " + priceService.computePrice(carName, () -> updatedPrice));
+
+        // Evict price from cache and compute price again.
+        priceService.evictPriceFromCache(carName);
+        BigDecimal newComputedPrice = priceService.computePrice(carName, () -> {
+            System.out.println("Cache cleared. Recomputing price for " + carName + "...");
+            return BigDecimal.valueOf(20000);
+        });
+        System.out.println("Recomputed price for " + carName + " after cache eviction: " + newComputedPrice);
 
     }
 
