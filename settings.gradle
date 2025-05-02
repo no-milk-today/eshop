@@ -1,1 +1,4 @@
 rootProject.name = 'reactive shop'
+include 'main-app', 'payment'
+// Gradle uses a convention where the module name specified in the settings file
+// is assumed to match the folder name in the project root.
