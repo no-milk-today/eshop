@@ -1,9 +1,24 @@
 plugins {
-	id 'org.springframework.boot' version '3.4.4'
+    id 'org.springframework.boot' version '3.4.4'
+    id "org.openapi.generator" version "7.12.0"
+}
+
+openApiGenerate {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/src/main/resources/api-spec.yaml") // projectDir - корень подпроекта payment
+    outputDir.set("$projectDir/build/generated")
+    modelPackage.set("com.yandex.reactive.testcontainers.payment.model")
+    apiPackage.set("com.yandex.reactive.testcontainers.payment.api")
+    configOptions.set([
+            sourceFolder : "src/gen/java/main/codegen",
+            interfaceOnly: "false",
+            library      : "spring-boot",
+            useTags      : "true"
+    ])
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	testImplementation 'com.redis:testcontainers-redis:2.2.2'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
 }

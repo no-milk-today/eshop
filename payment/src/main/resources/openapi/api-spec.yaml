@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  version: 1.0.0
+  description: API for managing payments and checking balances.
+servers:
+  - url: http://localhost:8081
+paths:
+  /payments:
+    post:
+      summary: Process a payment
+      operationId: processPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid request
+        '402':
+          description: Insufficient balance
+  /balances/{userId}:
+    get:
+      summary: Get user balance
+      operationId: getBalance
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+        '404':
+          description: User not found
+components:
+  schemas:
+    PaymentRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+      required:
+        - userId
+        - amount
+        - currency
+    PaymentResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        status:
+          type: string
+      required:
+        - transactionId
+        - status
+    BalanceResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        balance:
+          type: number
+          format: double
+      required:
+        - userId
+        - balance

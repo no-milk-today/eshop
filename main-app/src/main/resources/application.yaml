@@ -11,7 +11,7 @@ spring:
       mode: never
 
 server:
-  port: 8081
+  port: 8080
   netty:
     connection-timeout: 30s
 
