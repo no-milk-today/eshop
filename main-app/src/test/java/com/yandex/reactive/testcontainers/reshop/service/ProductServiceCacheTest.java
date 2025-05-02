@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -43,6 +46,45 @@ class ProductServiceCacheTest extends AbstractTestContainerTest {
         assertThat(fromCache).isNotNull();
         assertThat(fromCache.getName()).isEqualTo("CachedProduct");
         verify(productRepository, times(1)).findById(100L);
+    }
+
+    @Test
+    void testGetProductsCache() {
+        List<Product> products = List.of(
+                new Product(1L, "CachedProduct1", 1.0, "desc1", "https://example.com/image1.jpg", 0),
+                new Product(2L, "CachedProduct2", 2.0, "desc2", "https://example.com/image2.jpg", 0),
+                new Product(3L, "CachedProduct3", 3.0, "desc3", "https://example.com/image3.jpg", 0),
+                new Product(4L, "CachedProduct4", 4.0, "desc4", "https://example.com/image4.jpg", 0)
+        );
+
+        when(productRepository.findAll()).thenReturn(Flux.fromIterable(products));
+
+        List<Product> listFromDB = underTest
+                .getProducts("", "ALPHA", 1, 3)
+                .collectList()
+                .block();
+
+        assertThat(listFromDB)
+                .isNotNull()
+                .hasSize(3)
+                .extracting(Product::getName)
+                .containsExactly("CachedProduct1", "CachedProduct2", "CachedProduct3");
+        verify(productRepository, times(1)).findAll();
+
+        // Fetching the products from the Redis cache
+        when(productRepository.findAll()).thenReturn(Flux.empty());
+        List<Product> listFromCache = underTest
+                .getProducts("", "ALPHA", 1, 3)
+                .collectList()
+                .block();
+
+        assertThat(listFromCache)
+                .isNotNull()
+                .hasSize(3)
+                .extracting(Product::getName)
+                .containsExactly("CachedProduct1", "CachedProduct2", "CachedProduct3");
+
+        verify(productRepository, times(1)).findAll();
     }
 
 }
