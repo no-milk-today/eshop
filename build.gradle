@@ -36,6 +36,7 @@ dependencies {
 	testImplementation 'org.testcontainers:r2dbc' // поддержка контейнеров с R2dbc
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok' // видимо без нее никак
