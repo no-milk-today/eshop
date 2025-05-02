@@ -2,6 +2,14 @@ spring:
   application:
     name: re-shop
 
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+    cache:
+      redis:
+        time-to-live: PT5S    # TTL по умолчанию для кешей
+
   r2dbc:
     url: r2dbc:mysql://localhost:3306/reshop # URL подключения к БД
     username: ${MYSQL_USER}

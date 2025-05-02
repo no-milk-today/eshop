@@ -4,6 +4,7 @@ import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
 import com.yandex.reactive.testcontainers.reshop.domain.enums.ProductSort;
 import com.yandex.reactive.testcontainers.reshop.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,7 +33,11 @@ public class ProductService {
      * @param pageNumber page number (1-based)
      * @param pageSize   page size
      * @return Flux<Product> – поток найденных продуктов
+     *
+     * Caches the product lists: the cache key is a combination of the parameters.
      */
+    @Cacheable(cacheNames = "products",
+            key = "#root.methodName + ':' + #search + ':' + #sort + ':' + #pageNumber + ':' + #pageSize")
     public Flux<Product> getProducts(String search, String sort, int pageNumber, int pageSize) {
         log.debug("Fetching products with search: '{}', sort: '{}', pageNumber: {}, pageSize: {}",
                 search, sort, pageNumber, pageSize);
@@ -73,7 +78,7 @@ public class ProductService {
      * Splits the list of products into groups of ITEMS_PER_ROW for tile display.
      *
      * @param productsFlux Flux of products
-     * @return Mono<List<List<Product>>> – список рядов, где каждый ряд — это список товаров
+     * @return Mono<List < List < Product>>> – список рядов, где каждый ряд — это список товаров
      */
     public Mono<List<List<Product>>> groupProducts(Flux<Product> productsFlux) {
         return productsFlux
@@ -89,7 +94,9 @@ public class ProductService {
                 });
     }
 
+    @Cacheable(cacheNames = "products", key = "#id")
     public Mono<Product> findById(Long id) {
+        System.out.println("FIRST CALL, NO CACHE");
         log.debug("Searching for product with id: {}", id);
         return productRepository.findById(id);
     }

@@ -10,4 +10,7 @@ dependencies {
 	runtimeOnly 'io.asyncer:r2dbc-mysql'  // Дополнительный R2dbc драйвер, чья версия управляется Spring Boot плагином https://github.com/asyncer-io/r2dbc-mysql
 	testImplementation 'org.testcontainers:mysql' // MySql-имплементация абстракции JdbcDatabaseContainer
 	testImplementation 'org.testcontainers:r2dbc' // поддержка контейнеров с R2dbc
+
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 }
