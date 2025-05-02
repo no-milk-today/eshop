@@ -12,11 +12,21 @@ services:
     ports:
       - "3306:3306"
     networks:
-      - db
+      - back
+    restart: unless-stopped
+
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"] # Disable persistence for development
+    ports:
+      - "6379:6379"
+    networks:
+      - back
     restart: unless-stopped
 
 networks:
-  db:
+  back:
     driver: bridge
 
 volumes:

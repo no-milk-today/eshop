@@ -129,6 +129,7 @@ public class ProductHandler {
             return ServerResponse.badRequest().build();
         }
         return productService.findById(productId)
+                .doOnError(e -> log.error("Error in getSingleItem", e))
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("Продукт с id " + productId + " не найден")))
                 .flatMap(product ->
                         getProductCounts().map(counts -> {
