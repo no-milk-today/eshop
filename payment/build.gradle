@@ -6,7 +6,7 @@ plugins {
 openApiGenerate {
     generatorName.set("spring")
     inputSpec.set("$projectDir/src/main/resources/api-spec.yaml") // projectDir - корень подпроекта payment
-    outputDir.set("$buildDir/generated")
+    outputDir.set("$projectDir/build/generated")
     modelPackage.set("com.yandex.reactive.testcontainers.payment.model")
     apiPackage.set("com.yandex.reactive.testcontainers.payment.api")
     configOptions.set([
