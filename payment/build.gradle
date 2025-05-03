@@ -19,7 +19,9 @@ openApiGenerate {
             library        : "spring-boot",
             reactive       : "true",              // указывает генератору дать reactive контроллеры
             useTags        : "true",
-            useSpringBoot3 : "true"             // https://stackoverflow.com/questions/74593513/is-there-a-way-to-configure-openapi-generator-to-use-jakarta-package-during-gene
+            useSpringBoot3 : "true",             // https://stackoverflow.com/questions/74593513/is-there-a-way-to-configure-openapi-generator-to-use-jakarta-package-during-gene
+            delegatePattern : "true",
+            delegateSuffix  : "Delegate"
     ])
 }
 
@@ -37,6 +39,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.5'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
 }
 
 tasks.named('compileJava') {
