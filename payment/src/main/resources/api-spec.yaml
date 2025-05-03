@@ -9,6 +9,8 @@ paths:
   /payments:
     post:
       summary: Process a payment
+      tags:
+        - Payment
       operationId: processPayment
       requestBody:
         required: true
@@ -30,6 +32,8 @@ paths:
   /balances/{userId}:
     get:
       summary: Get user balance
+      tags:
+        - Payment
       operationId: getBalance
       parameters:
         - name: userId
