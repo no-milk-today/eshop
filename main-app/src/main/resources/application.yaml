@@ -8,7 +8,7 @@ spring:
       port: 6379
     cache:
       redis:
-        time-to-live: PT5S    # TTL по умолчанию для кешей
+        time-to-live: PT5M    # TTL по умолчанию для кешей
 
   r2dbc:
     url: r2dbc:mysql://localhost:3306/reshop # URL подключения к БД

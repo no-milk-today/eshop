@@ -6,19 +6,32 @@ plugins {
 openApiGenerate {
     generatorName.set("spring")
     inputSpec.set("$projectDir/src/main/resources/api-spec.yaml") // projectDir - корень подпроекта payment
-    outputDir.set("$projectDir/build/generated")
+    outputDir.set("$buildDir/generated")
     modelPackage.set("com.yandex.reactive.testcontainers.payment.model")
     apiPackage.set("com.yandex.reactive.testcontainers.payment.api")
     configOptions.set([
-            sourceFolder : "src/gen/java/main/codegen",
-            interfaceOnly: "false",
-            library      : "spring-boot",
-            useTags      : "true"
+        interfaceOnly: "false",
+        library      : "spring-boot",
+        reactive     : "true", // указывает генератору дать реактивные контроллеры (Mono/Flux).
+        useTags      : "true"
     ])
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir("$buildDir/generated/src/main/java")
+        }
+    }
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
-    testImplementation 'com.redis:testcontainers-redis:2.2.2'
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // валидацию для DTO
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.openApiGenerate
 }
