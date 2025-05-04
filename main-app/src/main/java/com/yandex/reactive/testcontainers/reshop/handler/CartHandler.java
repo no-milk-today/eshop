@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -75,14 +76,22 @@ public class CartHandler {
                                                         .build())
                                                 .collect(Collectors.toList());
 
-                                        // Check balance via external service
-                                        Mono<Boolean> canBuy = paymentClientService.checkBalance(String.valueOf(cart.getUserId()), cart.getTotalPrice());
-
-                                        return canBuy.flatMap(canBuyResult -> {
+                                        // Check balance via external service (and its health)
+                                        Mono<Tuple2<Boolean, Boolean>> paymentChecks = Mono.zip(
+                                                paymentClientService.healthCheck(),
+                                                paymentClientService.checkBalance(String.valueOf(cart.getUserId()), cart.getTotalPrice())
+                                        );
+                                        return paymentChecks.flatMap(tuple -> {
+                                            boolean paymentHealthy = tuple.getT1();
+                                            boolean sufficientBalance = tuple.getT2();
+                                            boolean canBuy = paymentHealthy && sufficientBalance;
                                             Map<String, Object> model = new HashMap<>();
                                             model.put("products", cartItemDtos);
                                             model.put("total", cart.getTotalPrice());
-                                            model.put("canBuy", canBuyResult);
+                                            model.put("canBuy", canBuy);
+                                            model.put("sufficientBalance", sufficientBalance);
+                                            // If payment service is down, display error message
+                                            model.put("paymentServiceDown", !paymentHealthy);
                                             return ServerResponse.ok().render("cart", model);
                                         });
                                     });

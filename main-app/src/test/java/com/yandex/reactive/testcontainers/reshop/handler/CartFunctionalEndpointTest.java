@@ -63,7 +63,8 @@ public class CartFunctionalEndpointTest {
         var product = new Product(100L, "Product A", 10.0, "Description A", "imgA.jpg", 0);
         when(productRepository.findById(100L)).thenReturn(Mono.just(product));
 
-        // Payment check returns true (enough money)
+        // Payment check returns true for both health and balance
+        when(paymentClientService.healthCheck()).thenReturn(Mono.just(true));
         when(paymentClientService.checkBalance(eq(String.valueOf(cart.getUserId())), eq(cart.getTotalPrice())))
                 .thenReturn(Mono.just(true));
 
@@ -82,6 +83,7 @@ public class CartFunctionalEndpointTest {
                     // Button should NOT be disabled
                     assertFalse(body.contains("disabled"));
                     assertFalse(body.contains("Недостаточно средств на балансе"));
+                    assertFalse(body.contains("Сервис платежей недоступен"));
                 });
     }
 
@@ -100,7 +102,8 @@ public class CartFunctionalEndpointTest {
         var product = new Product(200L, "Expensive Product", 150.0, "Description B", "imgB.jpg", 0);
         when(productRepository.findById(200L)).thenReturn(Mono.just(product));
 
-        // Payment check returns false
+        // Payment check returns healthy but insufficient funds.
+        when(paymentClientService.healthCheck()).thenReturn(Mono.just(true));
         when(paymentClientService.checkBalance(eq(String.valueOf(cart.getUserId())), eq(cart.getTotalPrice())))
                 .thenReturn(Mono.just(false));
 
@@ -119,6 +122,42 @@ public class CartFunctionalEndpointTest {
                     assertTrue(body.contains("disabled"));
                     // Warning message must be
                     assertTrue(body.contains("Недостаточно средств на балансе"));
+                    // Payment service is healthy so no service down message.
+                    assertFalse(body.contains("Сервис платежей недоступен"));
+                });
+    }
+
+    @Test
+    void testGetCartItemsPaymentServiceDown() {
+        var cart = new Cart();
+        cart.setId(1L);
+        cart.setTotalPrice(50.0);
+        cart.setUserId(1L);
+        when(cartService.getCart()).thenReturn(Mono.just(cart));
+
+        var cp = new CartProduct(1L, 1L, 300L);
+        when(cartProductRepository.findByCartId(1L)).thenReturn(Flux.just(cp));
+
+        var product = new Product(300L, "Product C", 50.0, "Description C", "imgC.jpg", 0);
+        when(productRepository.findById(300L)).thenReturn(Mono.just(product));
+
+        when(paymentClientService.healthCheck()).thenReturn(Mono.just(false));
+        when(paymentClientService.checkBalance(eq(String.valueOf(cart.getUserId())), eq(cart.getTotalPrice())))
+                .thenReturn(Mono.just(true));
+
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("Купить"));
+                    assertTrue(body.contains("disabled"));
+                    assertTrue(body.contains("Сервис платежей недоступен, попробуйте позже"));
+                    assertFalse(body.contains("Недостаточно средств на балансе"));
                 });
     }
 
