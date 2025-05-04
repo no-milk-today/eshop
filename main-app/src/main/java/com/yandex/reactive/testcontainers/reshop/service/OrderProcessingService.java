@@ -1,6 +1,7 @@
 package com.yandex.reactive.testcontainers.reshop.service;
 
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
+import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
 import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderProductRepository;
@@ -23,16 +24,20 @@ public class OrderProcessingService {
     private final ProductService productService;
     private final OrderProductRepository orderProductRepository;
     private final CartProductRepository cartProductRepository;
+    private final PaymentClientService paymentClientService;
 
     public OrderProcessingService(OrderService orderService,
                                   CartService cartService,
                                   ProductService productService,
-                                  OrderProductRepository orderProductRepository, CartProductRepository cartProductRepository) {
+                                  OrderProductRepository orderProductRepository,
+                                  CartProductRepository cartProductRepository,
+                                  PaymentClientService paymentClientService) {
         this.orderService = orderService;
         this.cartService = cartService;
         this.productService = productService;
         this.orderProductRepository = orderProductRepository;
         this.cartProductRepository = cartProductRepository;
+        this.paymentClientService = paymentClientService;
     }
 
     /**
@@ -42,6 +47,7 @@ public class OrderProcessingService {
      * - Группирует записи по productId чтобы подсчитать count каждого продукта.
      * - Загружает unique продукты и устанавливает их count.
      * - Формирует Order
+     * - Делает rest call в payment с помощью PaymentClientService.
      * - Сохраняет заказ (в OrderService после сохранения вставляются записи в order_products).
      * - Очищает корзину.
      */
@@ -78,11 +84,17 @@ public class OrderProcessingService {
                                                 order.setProducts(products);
                                                 order.setTotalSum(cart.getTotalPrice());
                                                 order.setOrderDate(LocalDateTime.now());
-                                                //todo Call remote payment service before saving order
-                                                return orderService.save(order)
-                                                        .flatMap(savedOrder ->
-                                                                cartService.clearCart().thenReturn(savedOrder)
-                                                        );
+                                                // Call remote payment service before saving order.
+                                                return paymentClientService.makePayment(String.valueOf(cart.getUserId()), cart.getTotalPrice())
+                                                        .flatMap(paymentSuccess -> {
+                                                            if (!paymentSuccess) {
+                                                                return Mono.error(new PaymentException("Payment failed due to processing error."));
+                                                            }
+                                                            return orderService.save(order)
+                                                                    .flatMap(savedOrder ->
+                                                                            cartService.clearCart().thenReturn(savedOrder)
+                                                                    );
+                                                        });
                                             });
                                 })
                 )

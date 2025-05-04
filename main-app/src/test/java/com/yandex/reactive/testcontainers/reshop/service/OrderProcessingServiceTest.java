@@ -4,6 +4,7 @@ import com.yandex.reactive.testcontainers.reshop.domain.entity.Cart;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.CartProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
+import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
 import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderProductRepository;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -38,6 +40,9 @@ class OrderProcessingServiceTest {
 
     @Mock
     private CartProductRepository cartProductRepository;
+
+    @Mock
+    private PaymentClientService paymentClientService;
 
     @InjectMocks
     private OrderProcessingService underTest;
@@ -78,6 +83,9 @@ class OrderProcessingServiceTest {
         orderFromDB.setTotalSum(cart.getTotalPrice());
         when(orderService.save(any(Order.class))).thenReturn(Mono.just(orderFromDB));
 
+        when(paymentClientService.makePayment(String.valueOf(cart.getUserId()), cart.getTotalPrice()))
+                .thenReturn(Mono.just(true));
+
         when(cartService.clearCart()).thenReturn(Mono.empty());
 
         Order result = underTest.processOrder().block();
@@ -102,5 +110,32 @@ class OrderProcessingServiceTest {
                 () -> underTest.processOrder().block()
         );
         assertThat(exception.getMessage()).isEqualTo("Cart is empty");
+    }
+
+    @Test
+    void testProcessOrder_PaymentFailure() {
+        Cart cart = new Cart();
+        cart.setId(1L);
+        cart.setUserId(1L);
+        cart.setTotalPrice(100.0);
+        when(cartService.getCart()).thenReturn(Mono.just(cart));
+
+        CartProduct cp = new CartProduct();
+        cp.setProductId(10L);
+        when(cartProductRepository.findByCartId(anyLong()))
+                .thenReturn(Flux.just(cp));
+
+        Product product = new Product();
+        product.setId(10L);
+        product.setPrice(100.0);
+        when(productService.findById(10L)).thenReturn(Mono.just(product));
+
+        // Simulate payment failure
+        when(paymentClientService.makePayment(String.valueOf(cart.getUserId()), cart.getTotalPrice()))
+                .thenReturn(Mono.just(false));
+
+        assertThatThrownBy(() -> underTest.processOrder().block())
+                .isInstanceOf(PaymentException.class)
+                .hasMessage("Payment failed due to processing error.");
     }
 }
