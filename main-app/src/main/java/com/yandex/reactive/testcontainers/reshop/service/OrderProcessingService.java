@@ -84,12 +84,14 @@ public class OrderProcessingService {
                                                 order.setProducts(products);
                                                 order.setTotalSum(cart.getTotalPrice());
                                                 order.setOrderDate(LocalDateTime.now());
-                                                // Call remote payment service before saving order.
+                                                log.debug("Call remote payment service before saving order");
                                                 return paymentClientService.makePayment(String.valueOf(cart.getUserId()), cart.getTotalPrice())
                                                         .flatMap(paymentSuccess -> {
                                                             if (!paymentSuccess) {
+                                                                log.error("Payment failed");
                                                                 return Mono.error(new PaymentException("Payment failed due to processing error."));
                                                             }
+                                                            log.debug("Payment service response: {}", paymentSuccess);
                                                             return orderService.save(order)
                                                                     .flatMap(savedOrder ->
                                                                             cartService.clearCart().thenReturn(savedOrder)

@@ -5,6 +5,8 @@ import com.yandex.reactive.testcontainers.reshop.domain.PaymentRequest;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
+
 @Service
 public class PaymentClientService {
     private final PaymentApi paymentApi; // сгенерированный WebClient‑клиент
@@ -22,9 +24,18 @@ public class PaymentClientService {
         PaymentRequest req = new PaymentRequest()
                 .userId(userId)
                 .amount(amount)
-                .currency("USD");
+                .currency("RUB");
         return paymentApi.processPayment(req)
                 .map(resp -> resp.getStatus().equals("SUCCESS"));
+    }
+
+    public Mono<Boolean> healthCheck() {
+        return paymentApi.getApiClient().getWebClient().get()
+                .uri("/actuator/health")
+                .retrieve()
+                .bodyToMono(Map.class)
+                .map(map -> "UP".equals(map.get("status")))
+                .onErrorReturn(false);
     }
 }
 

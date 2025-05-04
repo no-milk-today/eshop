@@ -66,7 +66,7 @@ public class PaymentClientServiceTest {
         var req = captor.getValue();
         assertThat(req.getUserId()).isEqualTo(userId);
         assertThat(req.getAmount()).isEqualTo(amount);
-        assertThat(req.getCurrency()).isEqualTo("USD");
+        assertThat(req.getCurrency()).isEqualTo("RUB");
     }
 
     @Test

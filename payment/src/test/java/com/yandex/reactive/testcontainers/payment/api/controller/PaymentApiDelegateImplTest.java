@@ -54,7 +54,7 @@ class PaymentApiDelegateImplTest {
         var req = new PaymentRequest()
                 .userId("u1")
                 .amount(1000.0)
-                .currency("USD");
+                .currency("RUB");
 
         when(balanceService.handleIfPossible(eq("u1"), eq(1000.0))).thenReturn(Mono.just(false));
 
@@ -71,7 +71,7 @@ class PaymentApiDelegateImplTest {
         var req = new PaymentRequest()
                 .userId("u2")
                 .amount(100.0)
-                .currency("USD");
+                .currency("RUB");
         when(balanceService.handleIfPossible("u2", 100.0)).thenReturn(Mono.just(true));
 
         var response = delegate.processPayment(Mono.just(req), exchange).block();
