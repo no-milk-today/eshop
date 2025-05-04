@@ -1,16 +1,48 @@
 plugins {
     id 'org.springframework.boot' version '3.4.4'
+    id 'org.openapi.generator' version '7.12.0'
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc' // стартер для работы с базой, используя Spring Data R2DBC
-	runtimeOnly 'com.mysql:mysql-connector-j' // драйвер для подключения к MySQL
-	runtimeOnly 'io.asyncer:r2dbc-mysql'  // Дополнительный R2dbc драйвер, чья версия управляется Spring Boot плагином https://github.com/asyncer-io/r2dbc-mysql
-	testImplementation 'org.testcontainers:mysql' // MySql-имплементация абстракции JdbcDatabaseContainer
-	testImplementation 'org.testcontainers:r2dbc' // поддержка контейнеров с R2dbc
+openApiGenerate {
+    generatorName.set("java")
+    inputSpec.set("$projectDir/src/main/resources/api-spec.yaml")
+    outputDir.set("$projectDir/build/generated")
+    apiPackage.set("com.yandex.reactive.testcontainers.reshop.client.api")
+    modelPackage.set("com.yandex.reactive.testcontainers.reshop.domain")
+    invokerPackage.set("com.yandex.reactive.testcontainers.reshop.client")
+    configOptions.set([
+            library        : "webclient",
+            useJakartaEe   : "true",
+            openApiNullable: "false"
+    ])
+}
 
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
-	testImplementation 'com.redis:testcontainers-redis:2.2.2'
+sourceSets {
+    main {
+        java {
+            srcDir("$projectDir/build/generated/src/main/java")
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.openApiGenerate
+}
+
+//tasks.withType(JavaCompile) {
+//    options.compilerArgs << '-Xlint:deprecation'
+//}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // Removed: implementation 'org.openapitools:openapi-generator-client:webclient:7.12.0'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    runtimeOnly 'com.mysql:mysql-connector-j' // драйвер для подключения к MySQL
+    runtimeOnly 'io.asyncer:r2dbc-mysql'
+    testImplementation 'org.testcontainers:mysql' // MySql-имплементация абстракции JdbcDatabaseContainer
+    testImplementation 'org.testcontainers:r2dbc' // поддержка контейнеров с R2dbc
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
 }
