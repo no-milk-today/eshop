@@ -5,6 +5,7 @@ import com.yandex.reactive.testcontainers.reshop.dto.CartItemDto;
 import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.ProductRepository;
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
+import com.yandex.reactive.testcontainers.reshop.service.PaymentClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -27,13 +28,15 @@ public class CartHandler {
     private final CartService cartService;
     private final CartProductRepository cartProductRepository;
     private final ProductRepository productRepository;
+    private final PaymentClientService paymentClientService;
 
     public CartHandler(CartService cartService,
                        CartProductRepository cartProductRepository,
-                       ProductRepository productRepository) {
+                       ProductRepository productRepository, PaymentClientService paymentClientService) {
         this.cartService = cartService;
         this.cartProductRepository = cartProductRepository;
         this.productRepository = productRepository;
+        this.paymentClientService = paymentClientService;
     }
 
     /**
@@ -71,11 +74,17 @@ public class CartHandler {
                                                         .count(productCounts.get(product.getId()).intValue())
                                                         .build())
                                                 .collect(Collectors.toList());
-                                        Map<String, Object> model = new HashMap<>();
-                                        model.put("products", cartItemDtos);
-                                        model.put("total", cart.getTotalPrice());
-                                        model.put("empty", cartProducts.isEmpty()); // to be removed
-                                        return ServerResponse.ok().render("cart", model);
+
+                                        // Check balance via external service
+                                        Mono<Boolean> canBuy = paymentClientService.checkBalance(String.valueOf(cart.getUserId()), cart.getTotalPrice());
+
+                                        return canBuy.flatMap(canBuyResult -> {
+                                            Map<String, Object> model = new HashMap<>();
+                                            model.put("products", cartItemDtos);
+                                            model.put("total", cart.getTotalPrice());
+                                            model.put("canBuy", canBuyResult);
+                                            return ServerResponse.ok().render("cart", model);
+                                        });
                                     });
                         })
         ).switchIfEmpty(ServerResponse.status(HttpStatus.NOT_FOUND)
