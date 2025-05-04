@@ -1,4 +1,4 @@
-package com.yandex.reactive.testcontainers.reshop;
+package com.yandex.reactive.testcontainers.reshop.config;
 
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
