@@ -1,5 +1,6 @@
 package com.yandex.reactive.testcontainers.reshop.router;
 
+import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
 import com.yandex.reactive.testcontainers.reshop.handler.OrderHandler;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,10 @@ public class OrderRouter {
                 .onError(ResourceNotFoundException.class, (ex, request) ->
                         ServerResponse.status(HttpStatus.NOT_FOUND)
                                 .render("not-found", Map.of("errorMessage", ex.getMessage()))
+                )
+                .onError(PaymentException.class, (ex, request) ->
+                        ServerResponse.status(HttpStatus.PAYMENT_REQUIRED)
+                                .render("payment-error", Map.of("errorMessage", ex.getMessage()))
                 )
                 .onError(IllegalArgumentException.class, (ex, request) ->
                         ServerResponse.badRequest().build())

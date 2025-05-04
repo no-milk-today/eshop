@@ -2,6 +2,7 @@ package com.yandex.reactive.testcontainers.reshop.handler;
 
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.User;
+import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.router.OrderRouter;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
@@ -52,6 +53,23 @@ public class OrderFunctionalEndpointTest {
                 .expectHeader().valueEquals("Location", "/orders/7?newOrder=true");
 
         verify(orderProcessingService).processOrder();
+    }
+
+    @Test
+    void testBuyOrderPaymentFailure() {
+        when(orderProcessingService.processOrder())
+                .thenReturn(Mono.error(new PaymentException("Payment failed due to insufficient funds")));
+
+        webTestClient.post()
+                .uri("/buy")
+                .exchange()
+                .expectStatus().isEqualTo(402)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("Payment failed due to insufficient funds"));
+                });
     }
 
     @Test

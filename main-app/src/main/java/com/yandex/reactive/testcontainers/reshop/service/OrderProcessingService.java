@@ -78,6 +78,7 @@ public class OrderProcessingService {
                                                 order.setProducts(products);
                                                 order.setTotalSum(cart.getTotalPrice());
                                                 order.setOrderDate(LocalDateTime.now());
+                                                //todo Call remote payment service before saving order
                                                 return orderService.save(order)
                                                         .flatMap(savedOrder ->
                                                                 cartService.clearCart().thenReturn(savedOrder)

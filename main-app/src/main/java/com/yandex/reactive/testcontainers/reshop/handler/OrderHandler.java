@@ -3,11 +3,12 @@ package com.yandex.reactive.testcontainers.reshop.handler;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
 import com.yandex.reactive.testcontainers.reshop.dto.OrderDTO;
-import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
+import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,14 +36,17 @@ public class OrderHandler {
 
     /**
      * POST "/buy" – Покупка товаров из корзины: создание заказа, очистка корзины и редирект на детали заказа.
+     * В случае payment failure, рендеринг payment-error темплейта.
      */
     public Mono<ServerResponse> buy(ServerRequest request) {
         return orderProcessingService.processOrder()
                 .flatMap(order ->
-                        ServerResponse.seeOther(
-                                        URI.create("/orders/" + order.getId() + "?newOrder=true"))
-                                .build()
-                );
+                        ServerResponse.seeOther(URI.create("/orders/" + order.getId() + "?newOrder=true")).build()
+                )
+                .onErrorResume(PaymentException.class, ex -> {
+                    Map<String, Object> model = Map.of("errorMessage", ex.getMessage());
+                    return ServerResponse.status(HttpStatus.PAYMENT_REQUIRED).render("payment-error", model);
+                });
     }
 
     /**
