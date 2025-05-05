@@ -54,7 +54,7 @@
             <form action="/buy" method="post" th:if="${products.size() > 0}">
                 <button th:disabled="${!canBuy}">Купить</button>
             </form>
-            <p th:if="${products.size() > 0} and ${!sufficientBalance}" style="color:red;">Недостаточно средств на балансе</p>
+            <p th:if="${!paymentServiceDown} and ${!sufficientBalance}" style="color:red;">Недостаточно средств на балансе</p>
             <p th:if="${paymentServiceDown}" style="color:red;">Сервис платежей недоступен, попробуйте позже</p>
         </td>
     </tr>

@@ -2,11 +2,12 @@ package com.yandex.reactive.testcontainers.reshop.service;
 
 import com.yandex.reactive.testcontainers.reshop.client.api.PaymentApi;
 import com.yandex.reactive.testcontainers.reshop.domain.PaymentRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
 
+@Slf4j
 @Service
 public class PaymentClientService {
     private final PaymentApi paymentApi; // сгенерированный WebClient‑клиент
@@ -31,11 +32,20 @@ public class PaymentClientService {
 
     public Mono<Boolean> healthCheck() {
         return paymentApi.getApiClient().getWebClient().get()
-                .uri("/actuator/health")
-                .retrieve()
-                .bodyToMono(Map.class)
-                .map(map -> "UP".equals(map.get("status")))
-                .onErrorReturn(false);
+                .uri(paymentApi.getApiClient().getBasePath() + "/actuator/health")
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is2xxSuccessful()) {
+                        log.debug("Health check OK");
+                        return Mono.just(true);
+                    } else {
+                        log.warn("Health check failed with status: {}", response.statusCode());
+                        return Mono.just(false);
+                    }
+                })
+                .onErrorResume(e -> {
+                    System.err.println("Health check failed: " + e.getMessage());
+                    return Mono.just(false); // false вместо проброса ошибки
+                });
     }
 }
 

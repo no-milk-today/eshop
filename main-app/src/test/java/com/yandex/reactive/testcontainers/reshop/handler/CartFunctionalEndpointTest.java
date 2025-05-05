@@ -176,4 +176,39 @@ public class CartFunctionalEndpointTest {
 
         verify(cartService).modifyItem(100L, "plus");
     }
+
+    @Test
+    void testGetCartItemsPaymentServiceDownWithBalanceCheck() {
+        var cart = new Cart();
+        cart.setId(1L);
+        cart.setTotalPrice(50.0);
+        cart.setUserId(1L);
+        when(cartService.getCart()).thenReturn(Mono.just(cart));
+
+        var cp = new CartProduct(1L, 1L, 300L);
+        when(cartProductRepository.findByCartId(1L)).thenReturn(Flux.just(cp));
+
+        var product = new Product(300L, "Product C", 50.0, "Description C", "imgC.jpg", 0);
+        when(productRepository.findById(300L)).thenReturn(Mono.just(product));
+
+        // Simulate health check failure and balanceСheck true
+        when(paymentClientService.healthCheck()).thenReturn(Mono.just(false));
+        when(paymentClientService.checkBalance(eq(String.valueOf(cart.getUserId())), eq(cart.getTotalPrice())))
+                .thenReturn(Mono.just(true));
+
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("Купить"));
+                    assertTrue(body.contains("disabled"));
+                    assertTrue(body.contains("Сервис платежей недоступен, попробуйте позже"));
+                    assertFalse(body.contains("Недостаточно средств на балансе"));
+                });
+    }
 }

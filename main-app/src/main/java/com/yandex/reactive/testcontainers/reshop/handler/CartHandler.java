@@ -76,11 +76,20 @@ public class CartHandler {
                                                         .build())
                                                 .collect(Collectors.toList());
 
-                                        // Check balance via external service (and its health)
+                                        // Check balance and health via external service
                                         Mono<Tuple2<Boolean, Boolean>> paymentChecks = Mono.zip(
-                                                paymentClientService.healthCheck(),
+                                                paymentClientService.healthCheck()
+                                                        .onErrorResume(e -> {
+                                                            log.error("Health check failed: {}", e.getMessage());
+                                                            return Mono.just(false);
+                                                        }),
                                                 paymentClientService.checkBalance(String.valueOf(cart.getUserId()), cart.getTotalPrice())
+                                                        .onErrorResume(e -> {
+                                                            log.error("Balance check failed: {}", e.getMessage());
+                                                            return Mono.just(false);
+                                                        })
                                         );
+
                                         return paymentChecks.flatMap(tuple -> {
                                             boolean paymentHealthy = tuple.getT1();
                                             boolean sufficientBalance = tuple.getT2();

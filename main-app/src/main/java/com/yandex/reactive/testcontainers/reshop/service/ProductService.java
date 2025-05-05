@@ -39,7 +39,7 @@ public class ProductService {
     @Cacheable(cacheNames = "products",
             key = "#root.methodName + ':' + #search + ':' + #sort + ':' + #pageNumber + ':' + #pageSize")
     public Flux<Product> getProducts(String search, String sort, int pageNumber, int pageSize) {
-        log.debug("Fetching products with search: '{}', sort: '{}', pageNumber: {}, pageSize: {}",
+        log.debug("Empty cache, Fetching products with search: '{}', sort: '{}', pageNumber: {}, pageSize: {}",
                 search, sort, pageNumber, pageSize);
 
         // Определяем тип сортировки по строке
@@ -96,8 +96,7 @@ public class ProductService {
 
     @Cacheable(cacheNames = "products", key = "#id")
     public Mono<Product> findById(Long id) {
-        System.out.println("FIRST CALL, NO CACHE");
-        log.debug("Searching for product with id: {}", id);
+        log.debug("Empty CACHE, Searching for product with id: {}", id);
         return productRepository.findById(id);
     }
 }
