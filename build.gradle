@@ -30,12 +30,14 @@ subprojects {
 	dependencies {
 		compileOnly 'org.projectlombok:lombok'
 		annotationProcessor 'org.projectlombok:lombok'
+		implementation 'org.springframework.boot:spring-boot-starter-security'
 		// общие тестовые либы
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 		testImplementation 'org.springframework.boot:spring-boot-testcontainers' // поддержка упрощённого использования Testcontainers в Spring Boot
 		testImplementation 'io.projectreactor:reactor-test'
 		testImplementation 'org.testcontainers:junit-jupiter' // интеграция Testcontainers с JUnit
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+		testImplementation 'org.springframework.security:spring-security-test'
 	}
 
 	tasks.withType(Test).configureEach {

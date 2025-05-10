@@ -23,8 +23,6 @@ public class Order {
     @Column("user_id")
     private Long userId;
 
-    // Автоматический маппинг связей ManyToMany не поддерживается, поэтому поле отмечаем как @Transient.
-    // можно реализовать доп логику для фетча списка продуктов.
     @Transient
     private List<Product> products;
 

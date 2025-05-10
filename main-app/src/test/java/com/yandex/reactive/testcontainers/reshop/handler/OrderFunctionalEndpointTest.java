@@ -3,6 +3,7 @@ package com.yandex.reactive.testcontainers.reshop.handler;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.User;
 import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
+import com.yandex.reactive.testcontainers.reshop.handler.security.SecurityConfig;
 import com.yandex.reactive.testcontainers.reshop.router.OrderRouter;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
@@ -26,7 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Import({OrderRouter.class, OrderHandler.class})
+@Import({OrderRouter.class, OrderHandler.class, SecurityConfig.class})
 @WebFluxTest
 public class OrderFunctionalEndpointTest {
 
@@ -39,6 +40,7 @@ public class OrderFunctionalEndpointTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    // todo: @WithMockUser(username = "test", roles = {"USER"})
     @Test
     void testBuyOrder() {
         var order = new Order();

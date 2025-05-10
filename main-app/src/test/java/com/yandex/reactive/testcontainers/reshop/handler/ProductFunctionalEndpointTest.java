@@ -3,6 +3,7 @@ package com.yandex.reactive.testcontainers.reshop.handler;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Cart;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.CartProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
+import com.yandex.reactive.testcontainers.reshop.handler.security.SecurityConfig;
 import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
 import com.yandex.reactive.testcontainers.reshop.router.ProductRouter;
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
@@ -29,8 +30,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.web.reactive.function.BodyInserters.fromFormData;
 
-//todo: из коробки не видит роутер и хенждер, проресерчить вопрос
-@Import({ProductRouter.class, ProductHandler.class})
+//todo: Отключить Spring Security в тестах
+@Import({ProductRouter.class, ProductHandler.class, SecurityConfig.class})
 @WebFluxTest
 public class ProductFunctionalEndpointTest {
 
