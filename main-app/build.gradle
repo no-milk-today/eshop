@@ -35,7 +35,9 @@ tasks.named('compileJava') {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    // Removed: implementation 'org.openapitools:openapi-generator-client:webclient:7.12.0'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-oauth2-client
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     runtimeOnly 'com.mysql:mysql-connector-j' // драйвер для подключения к MySQL
