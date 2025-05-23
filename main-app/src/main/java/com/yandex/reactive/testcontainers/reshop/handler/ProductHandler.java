@@ -10,6 +10,8 @@ import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepositor
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
 import com.yandex.reactive.testcontainers.reshop.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -55,14 +57,29 @@ public class ProductHandler {
         int pageSize = Integer.parseInt(request.queryParam("pageSize").orElse("10"));
         int pageNumber = Integer.parseInt(request.queryParam("pageNumber").orElse("1"));
 
+        Mono<Authentication> authenticationMono = request.principal()
+                .cast(Authentication.class)
+                .filter(auth -> auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken))
+                .switchIfEmpty(Mono.empty());
+
+        Mono<String> usernameMono = authenticationMono
+                .map(Authentication::getName)
+                .defaultIfEmpty("Гость");
+
+        Mono<Boolean> isAuthenticatedMono = authenticationMono
+                .map(auth -> true)
+                .defaultIfEmpty(false);
+
         Flux<Product> productFlux = productService.getProducts(search, sort, pageNumber, pageSize);
         Mono<List<List<Product>>> groupedMono = productService.groupProducts(productFlux);
         Mono<Map<Long, Integer>> countsMono = getProductCounts();
 
-        return Mono.zip(groupedMono, countsMono)
+        return Mono.zip(groupedMono, countsMono, usernameMono, isAuthenticatedMono)
                 .flatMap(tuple -> {
                     List<List<Product>> groupedProducts = tuple.getT1();
                     Map<Long, Integer> counts = tuple.getT2();
+                    String username = tuple.getT3(); // todo research why UUID instead of username
+                    Boolean isAuthenticated = tuple.getT4();
 
                     // Для каждого продукта устанавливаем поле count из полученных данных (если не найден – 0)
                     groupedProducts.forEach(row ->
@@ -88,10 +105,13 @@ public class ProductHandler {
                     model.put("search", search);
                     model.put("sort", sort);
                     model.put("paging", paging);
+                    //model.put("username", username); // username issue
+                    model.put("isAuthenticated", isAuthenticated);
 
                     return ServerResponse.ok().render("main", model);
                 });
     }
+
 
     /**
      * POST "/main/items/{id}" – изменение количества товара в корзине.

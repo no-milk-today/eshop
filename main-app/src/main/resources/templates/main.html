@@ -7,10 +7,14 @@
 </head>
 
 <body>
-    <a href="/orders" style="float:right;">
+    <a th:if="${isAuthenticated}" href="/logout" style="float:right;">
+        <b>ВЫХОД &cudarrr;</b>
+    </a>
+
+    <a th:if="${isAuthenticated}" href="/orders" style="float:right;">
         <b>ЗАКАЗЫ &cudarrr;</b>
     </a>
-    <a href="/cart/items" style="float:right;">
+    <a th:if="${isAuthenticated}" href="/cart/items" style="float:right;">
         <b>КОРЗИНА &cudarrr;</b>
     </a>
     <table style="width:70%;margin-left:auto;margin-right:auto;">
