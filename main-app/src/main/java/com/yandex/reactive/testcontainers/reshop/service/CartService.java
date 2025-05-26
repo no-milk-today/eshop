@@ -10,6 +10,8 @@ import com.yandex.reactive.testcontainers.reshop.repository.CartRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.ProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -21,9 +23,6 @@ public class CartService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CartProductRepository cartProductRepository;
-
-    // single user
-    private static final Long DEFAULT_USER_ID = 1L;
 
     public CartService(CartRepository cartRepository,
                        ProductRepository productRepository,
@@ -57,11 +56,26 @@ public class CartService {
     }
 
     /**
-     * Получение корзины для default пользователя.
+     * Получение корзины для currently authenticated пользователя.
+     * Making use of security context and UserRepository.
      */
     public Mono<Cart> getCart() {
-        log.debug("Fetching cart for default user");
-        return getCartForUser(DEFAULT_USER_ID);
+        return ReactiveSecurityContextHolder.getContext()
+                .map(SecurityContext::getAuthentication)
+                .doOnNext(auth -> log.debug("Authentication found: {}", auth.getName()))
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not authenticated")))
+                .flatMap(auth -> userRepository.findByUsername(auth.getName()))
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not found in DB")))
+                .flatMap(user ->
+                        cartRepository.findByUserId(user.getId())
+                                .switchIfEmpty(Mono.defer(() -> {
+                                    log.info("No cart found for user with id {}, creating a new one", user.getId());
+                                    Cart newCart = new Cart();
+                                    newCart.setUserId(user.getId());
+                                    newCart.setTotalPrice(0.0);
+                                    return cartRepository.save(newCart);
+                                }))
+                );
     }
 
     /**

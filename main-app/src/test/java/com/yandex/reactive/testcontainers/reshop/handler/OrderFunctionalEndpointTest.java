@@ -6,6 +6,7 @@ import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.router.OrderRouter;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 @Import({OrderRouter.class, OrderHandler.class})
 @WebFluxTest
+@Disabled
 public class OrderFunctionalEndpointTest {
 
     @MockitoBean

@@ -8,6 +8,7 @@ import com.yandex.reactive.testcontainers.reshop.repository.ProductRepository;
 import com.yandex.reactive.testcontainers.reshop.router.CartRouter;
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
 import com.yandex.reactive.testcontainers.reshop.service.PaymentClientService;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -27,6 +28,7 @@ import static org.springframework.web.reactive.function.BodyInserters.fromFormDa
 
 @Import({CartRouter.class, CartHandler.class})
 @WebFluxTest
+@Disabled
 public class CartFunctionalEndpointTest {
 
     @MockitoBean

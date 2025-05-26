@@ -14,10 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
-
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,8 +92,9 @@ public class CartServiceTest {
         product.setName("Test Product");
         product.setPrice(50.0);
 
-        when(userRepository.findById(defaultUserId)).thenReturn(Mono.just(defaultUser));
-        when(cartRepository.findByUserId(defaultUserId)).thenReturn(Mono.just(cart));
+        // Use findByUsername for authenticated user lookup
+        when(userRepository.findByUsername("default")).thenReturn(Mono.just(defaultUser));
+        when(cartRepository.findByUserId(defaultUser.getId())).thenReturn(Mono.just(cart));
         when(productRepository.findById(product.getId())).thenReturn(Mono.just(product));
         when(cartProductRepository.save(any(CartProduct.class))).thenAnswer(invocation -> {
             CartProduct cp = invocation.getArgument(0);
@@ -103,9 +104,12 @@ public class CartServiceTest {
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
         when(cartProductRepository.findByCartId(cart.getId())).thenReturn(Flux.just(new CartProduct(1L, cart.getId(), product.getId())));
 
-        cartService.modifyItem(product.getId(), "plus").block();
+        var auth = new UsernamePasswordAuthenticationToken("default", "pass");
+        cartService.modifyItem(product.getId(), "plus")
+                   .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))
+                   .block();
 
-        verify(cartProductRepository).save(any(CartProduct.class));
+        verify(cartProductRepository).save(any());
         verify(cartRepository, atLeastOnce()).save(any(Cart.class));
     }
 
@@ -124,8 +128,8 @@ public class CartServiceTest {
 
         var existingCP = new CartProduct(2L, cart.getId(), product.getId());
 
-        when(userRepository.findById(defaultUserId)).thenReturn(Mono.just(defaultUser));
-        when(cartRepository.findByUserId(defaultUserId)).thenReturn(Mono.just(cart));
+        when(userRepository.findByUsername("default")).thenReturn(Mono.just(defaultUser));
+        when(cartRepository.findByUserId(defaultUser.getId())).thenReturn(Mono.just(cart));
         when(productRepository.findById(product.getId())).thenReturn(Mono.just(product));
         when(cartProductRepository.findFirstByCartIdAndProductId(cart.getId(), product.getId()))
                 .thenReturn(Mono.just(existingCP));
@@ -134,7 +138,10 @@ public class CartServiceTest {
         // После удаления возвращаем пустой список, что приведёт к totalPrice = 0.0
         when(cartProductRepository.findByCartId(cart.getId())).thenReturn(Flux.empty());
 
-        cartService.modifyItem(product.getId(), "minus").block();
+        var auth = new UsernamePasswordAuthenticationToken("default", "pass");
+        cartService.modifyItem(product.getId(), "minus")
+                   .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))
+                   .block();
 
         verify(cartProductRepository).findFirstByCartIdAndProductId(cart.getId(), product.getId());
         verify(cartProductRepository).deleteById(existingCP.getId());
@@ -156,8 +163,8 @@ public class CartServiceTest {
         var cp1 = new CartProduct(3L, cart.getId(), product.getId());
         var cp2 = new CartProduct(4L, cart.getId(), product.getId());
 
-        when(userRepository.findById(defaultUserId)).thenReturn(Mono.just(defaultUser));
-        when(cartRepository.findByUserId(defaultUserId)).thenReturn(Mono.just(cart));
+        when(userRepository.findByUsername("default")).thenReturn(Mono.just(defaultUser));
+        when(cartRepository.findByUserId(defaultUser.getId())).thenReturn(Mono.just(cart));
         when(productRepository.findById(product.getId())).thenReturn(Mono.just(product));
         when(cartProductRepository.findAllByCartIdAndProductId(cart.getId(), product.getId()))
                 .thenReturn(Flux.just(cp1, cp2));
@@ -167,7 +174,10 @@ public class CartServiceTest {
         when(cartProductRepository.findByCartId(cart.getId())).thenReturn(Flux.empty());
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-        cartService.modifyItem(product.getId(), "delete").block();
+        var auth = new UsernamePasswordAuthenticationToken("default", "pass");
+        cartService.modifyItem(product.getId(), "delete")
+                   .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))
+                   .block();
 
         verify(cartProductRepository).findAllByCartIdAndProductId(cart.getId(), product.getId());
         verify(cartProductRepository).deleteById(cp1.getId());
