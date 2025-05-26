@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .pathMatchers("/", "/main/items", "/login", "/oauth2/**").permitAll()
                 .anyExchange().authenticated()
             )
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .oauth2Login(Customizer.withDefaults())
             .oauth2Client(Customizer.withDefaults())  //main-app выступает как OAuth2 client
             .logout(logout -> logout
