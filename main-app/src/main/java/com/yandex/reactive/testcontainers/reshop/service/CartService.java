@@ -12,6 +12,7 @@ import com.yandex.reactive.testcontainers.reshop.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -57,15 +58,26 @@ public class CartService {
 
     /**
      * Получение корзины для currently authenticated пользователя.
-     * Making use of security context and UserRepository.
+     * If the authentication principal is an OIDC user, the preferred username is used for lookup.
+     *
+     * @return a Mono with existing or brand-new Cart
+     * @throws ResourceNotFoundException if the user is not authenticated or not found in the DB
      */
     public Mono<Cart> getCart() {
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .doOnNext(auth -> log.debug("Authentication found: {}", auth.getName()))
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not authenticated")))
-                .flatMap(auth -> userRepository.findByUsername(auth.getName()))
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not found in DB")))
+                .flatMap(auth -> {
+                    String username;
+                    if (auth.getPrincipal() instanceof OidcUser oidcUser) {
+                        username = oidcUser.getPreferredUsername();
+                    } else {
+                        username = auth.getName();
+                    }
+                    return userRepository.findByUsername(username)
+                            .switchIfEmpty(Mono.error(new ResourceNotFoundException("User not found in DB")));
+                })
                 .flatMap(user ->
                         cartRepository.findByUserId(user.getId())
                                 .switchIfEmpty(Mono.defer(() -> {

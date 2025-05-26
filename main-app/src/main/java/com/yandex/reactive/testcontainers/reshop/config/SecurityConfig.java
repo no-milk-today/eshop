@@ -51,7 +51,7 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         http
             .authorizeExchange(exchanges -> exchanges
-                .pathMatchers("/", "/main/items", "/login", "/oauth2/**").permitAll()
+                .pathMatchers("/", "/main/items", "/items/**", "/login", "/oauth2/**", "/actuator/**").permitAll()
                 .anyExchange().authenticated()
             )
             .csrf(ServerHttpSecurity.CsrfSpec::disable)

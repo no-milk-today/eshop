@@ -70,11 +70,17 @@ public class ProductHandler {
                 .map(auth -> true)
                 .defaultIfEmpty(false);
 
-        Flux<Product> productFlux = productService.getProducts(search, sort, pageNumber, pageSize);
-        Mono<List<List<Product>>> groupedMono = productService.groupProducts(productFlux);
-        Mono<Map<Long, Integer>> countsMono = getProductCounts();
+        Flux<Product> productFlux = productService.getProducts(search, sort, pageNumber, pageSize)
+                .doOnError(e -> log.error("Error in getProducts", e));
+
+        Mono<List<List<Product>>> groupedMono = productService.groupProducts(productFlux)
+                .doOnError(e -> log.error("Error in groupProducts", e));
+
+        Mono<Map<Long, Integer>> countsMono = getProductCounts()
+                .doOnError(e -> log.error("Error in getProductCounts", e));
 
         return Mono.zip(groupedMono, countsMono, usernameMono, isAuthenticatedMono)
+                .doOnError(e -> log.error("Error during zipping", e))
                 .flatMap(tuple -> {
                     List<List<Product>> groupedProducts = tuple.getT1();
                     Map<Long, Integer> counts = tuple.getT2();
@@ -171,6 +177,10 @@ public class ProductHandler {
      */
     private Mono<Map<Long, Integer>> getProductCounts() {
         return cartService.getCart()
+                .onErrorResume(ResourceNotFoundException.class, ex -> {
+                    log.debug("User not authenticated, returning empty counts map.", ex);
+                    return Mono.empty();
+                })
                 .flatMapMany(cart ->
                         cartProductRepository.findByCartId(cart.getId())
                 )

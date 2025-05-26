@@ -11,9 +11,10 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class PaymentSecurityConfig {
 
     @Bean
-    SecurityWebFilterChain securityFilterChain(ServerHttpSecurity security) throws Exception {
-        return security
-                .authorizeExchange(requests -> requests
+    SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+        return http
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/actuator/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 // включаем проверку JWT-токена
@@ -25,4 +26,3 @@ public class PaymentSecurityConfig {
                 .build();
     }
 }
-
