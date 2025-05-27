@@ -27,7 +27,7 @@
         <p>
             <span th:text="${item.description}"></span>
         </p>
-        <form th:action="${'/main/items/'+item.id}" method="post">
+        <form th:action="${'/main/items/'+item.id}" method="post" th:if="${isAuthenticated}">
             <button name="action" value="minus">-</button>
             <span th:text="${item.count}"></span>
             <button name="action" value="plus">+</button>
