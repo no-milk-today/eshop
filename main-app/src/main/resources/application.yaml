@@ -3,16 +3,28 @@ spring:
     oauth2:
       client:
         registration:
+          # interactive клиент для браузерного логина (Authorization Code Flow)
           storefront:                # registrationId
-            provider: keycloak      # ссылка на блок provider
+            provider: keycloak
             client-id: storefront-client
-            client-secret: ${STORE_FRONT_CLIENT_SECRET} # FGIopMQW0f9Vd5ZnQRJqYvJYbSGvimen
+            client-secret: ${STORE_FRONT_CLIENT_SECRET}
             authorization-grant-type: authorization_code
             scope: openid,profile,email
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+          # клиент для service-to-service (Client Credentials Flow)
+          storefront-machine:       # registrationId
+            provider: keycloak
+            client-id: storefront-machine-client
+            client-secret: ${STORE_FRONT_MACHINE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: profile
+            clientAuthenticationMethod: client_secret_basic
+
         provider:
           keycloak:
             issuer-uri: http://localhost:8080/realms/shop-realm
+            token-uri: http://localhost:8080/realms/shop-realm/protocol/openid-connect/token
 
   application:
     name: re-shop
@@ -26,9 +38,10 @@ spring:
         time-to-live: PT5M    # TTL по умолчанию для кешей
 
   r2dbc:
-    url: r2dbc:mysql://localhost:3306/reshop # URL подключения к БД
+    url: r2dbc:mysql://localhost:3306/reshop
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
+
   sql:
     init:
       mode: never
