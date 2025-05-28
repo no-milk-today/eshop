@@ -1,7 +1,9 @@
 package com.yandex.reactive.testcontainers.reshop.service;
 
 import com.yandex.reactive.testcontainers.reshop.client.api.PaymentApi;
+import com.yandex.reactive.testcontainers.reshop.domain.BalanceResponse;
 import com.yandex.reactive.testcontainers.reshop.domain.PaymentRequest;
+import com.yandex.reactive.testcontainers.reshop.domain.PaymentResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
@@ -25,6 +27,7 @@ public class PaymentClientService {
     /**
      * Обновляем Bearer-токен из регистрации "storefront-machine" перед вызовом Payment API.
      */
+    @Deprecated
     private Mono<Void> updateBearerToken() {
         OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                 .withClientRegistrationId("storefront-machine")
@@ -40,9 +43,30 @@ public class PaymentClientService {
     }
 
     public Mono<Boolean> checkBalance(String userId, double amount) {
-        return updateBearerToken()
-                .then(paymentApi.getBalance(userId)
-                        .map(resp -> resp.getBalance() >= amount));
+        OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
+                .withClientRegistrationId("storefront-machine")
+                .principal("storefront-machine")
+                .build();
+
+        return authorizedClientManager.authorize(authRequest)
+                .flatMap(authorizedClient -> {
+                    String token = authorizedClient.getAccessToken().getTokenValue();
+                    return paymentApi.getApiClient().getWebClient().get()
+                            .uri(paymentApi.getApiClient().getBasePath() + "/balances/" + userId)
+                            .header("Authorization", "Bearer " + token)
+                            .exchangeToMono(response -> {
+                                if (response.statusCode().is2xxSuccessful()) {
+                                    return response.bodyToMono(BalanceResponse.class);
+                                } else {
+                                    return Mono.error(new RuntimeException("Balance check failed with status: " + response.statusCode()));
+                                }
+                            });
+                })
+                .map(balanceResp -> balanceResp.getBalance() >= amount)
+                .onErrorResume(e -> {
+                    log.error("Balance check failed: {}", e.getMessage());
+                    return Mono.just(false);
+                });
     }
 
     public Mono<Boolean> makePayment(String userId, double amount) {
@@ -50,9 +74,32 @@ public class PaymentClientService {
                 .userId(userId)
                 .amount(amount)
                 .currency("RUB");
-        return updateBearerToken()
-                .then(paymentApi.processPayment(req)
-                        .map(resp -> "SUCCESS".equals(resp.getStatus())));
+
+        OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
+                .withClientRegistrationId("storefront-machine")
+                .principal("storefront-machine")
+                .build();
+
+        return authorizedClientManager.authorize(authRequest)
+                .flatMap(authorizedClient -> {
+                    String token = authorizedClient.getAccessToken().getTokenValue();
+                    return paymentApi.getApiClient().getWebClient().post()
+                            .uri(paymentApi.getApiClient().getBasePath() + "/payments")
+                            .header("Authorization", "Bearer " + token)
+                            .bodyValue(req)
+                            .exchangeToMono(response -> {
+                                if (response.statusCode().is2xxSuccessful()) {
+                                    return response.bodyToMono(PaymentResponse.class);
+                                } else {
+                                    return Mono.error(new RuntimeException("Payment failed with status: " + response.statusCode()));
+                                }
+                            });
+                })
+                .map(resp -> "SUCCESS".equals(resp.getStatus()))
+                .onErrorResume(e -> {
+                    log.error("Payment failed: {}", e.getMessage());
+                    return Mono.just(false);
+                });
     }
 
     public Mono<Boolean> healthCheck() {

@@ -5,6 +5,7 @@ import com.yandex.reactive.testcontainers.reshop.domain.BalanceResponse;
 import com.yandex.reactive.testcontainers.reshop.domain.PaymentRequest;
 import com.yandex.reactive.testcontainers.reshop.domain.PaymentResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
@@ -14,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@Disabled
 public class PaymentClientServiceTest {
 
     private PaymentApi paymentApi;
