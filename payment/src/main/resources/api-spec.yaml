@@ -8,6 +8,8 @@ servers:
 paths:
   /payments:
     post:
+      security:
+        - oauth2: []
       summary: Process a payment
       tags:
         - Payment
@@ -31,6 +33,8 @@ paths:
           description: Insufficient balance
   /balances/{userId}:
     get:
+      security:
+        - oauth2: []
       summary: Get user balance
       tags:
         - Payment
@@ -51,6 +55,11 @@ paths:
         '404':
           description: User not found
 components:
+  securitySchemes:
+    oauth2:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     PaymentRequest:
       type: object
