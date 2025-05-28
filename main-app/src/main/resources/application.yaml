@@ -50,3 +50,7 @@ server:
   port: 8180
   netty:
     connection-timeout: 30s
+
+logging:
+  level:
+    com.yandex.reactive.testcontainers.reshop.service.PaymentClientService: DEBUG

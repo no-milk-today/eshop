@@ -7,6 +7,7 @@ import com.yandex.reactive.testcontainers.reshop.domain.PaymentResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,11 +18,13 @@ public class PaymentClientServiceTest {
 
     private PaymentApi paymentApi;
     private PaymentClientService paymentClientService;
+    private ReactiveOAuth2AuthorizedClientManager authorizedClientManager;
 
     @BeforeEach
     void setUp() {
         paymentApi = mock(PaymentApi.class);
-        paymentClientService = new PaymentClientService(paymentApi);
+        authorizedClientManager = request -> Mono.empty();
+        paymentClientService = new PaymentClientService(paymentApi, authorizedClientManager);
     }
 
     @Test
