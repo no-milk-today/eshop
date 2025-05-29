@@ -5,6 +5,7 @@ import com.yandex.reactive.testcontainers.reshop.domain.BalanceResponse;
 import com.yandex.reactive.testcontainers.reshop.domain.PaymentRequest;
 import com.yandex.reactive.testcontainers.reshop.domain.PaymentResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 import org.springframework.stereotype.Service;
@@ -24,28 +25,11 @@ public class PaymentClientService {
         this.authorizedClientManager = authorizedClientManager;
     }
 
-    /**
-     * Обновляем Bearer-токен из регистрации "storefront-machine" перед вызовом Payment API.
-     */
-    @Deprecated
-    private Mono<Void> updateBearerToken() {
-        OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
-                .withClientRegistrationId("storefront-machine")
-                .principal("storefront-machine") // doesnt matter
-                .build();
-
-        return authorizedClientManager.authorize(authRequest)
-                .doOnNext(authorizedClient -> {
-                    String token = authorizedClient.getAccessToken().getTokenValue();
-                    paymentApi.getApiClient().setBearerToken(token);
-                })
-                .then();
-    }
-
+    // за генерацию OAuth2 access token отвечает Keycloak
     public Mono<Boolean> checkBalance(String userId, double amount) {
         OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                 .withClientRegistrationId("storefront-machine")
-                .principal("storefront-machine")
+                .principal("system")
                 .build();
 
         return authorizedClientManager.authorize(authRequest)
@@ -53,7 +37,7 @@ public class PaymentClientService {
                     String token = authorizedClient.getAccessToken().getTokenValue();
                     return paymentApi.getApiClient().getWebClient().get()
                             .uri(paymentApi.getApiClient().getBasePath() + "/balances/" + userId)
-                            .header("Authorization", "Bearer " + token)
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                             .exchangeToMono(response -> {
                                 if (response.statusCode().is2xxSuccessful()) {
                                     return response.bodyToMono(BalanceResponse.class);
@@ -77,7 +61,7 @@ public class PaymentClientService {
 
         OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                 .withClientRegistrationId("storefront-machine")
-                .principal("storefront-machine")
+                .principal("system") // doesnt matter, У client_credentials нет имени пользователя
                 .build();
 
         return authorizedClientManager.authorize(authRequest)
@@ -85,7 +69,7 @@ public class PaymentClientService {
                     String token = authorizedClient.getAccessToken().getTokenValue();
                     return paymentApi.getApiClient().getWebClient().post()
                             .uri(paymentApi.getApiClient().getBasePath() + "/payments")
-                            .header("Authorization", "Bearer " + token)
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token) // Подставляем Bearer-токена в хедер Authorization
                             .bodyValue(req)
                             .exchangeToMono(response -> {
                                 if (response.statusCode().is2xxSuccessful()) {
@@ -105,16 +89,16 @@ public class PaymentClientService {
     public Mono<Boolean> healthCheck() {
         OAuth2AuthorizeRequest authRequest = OAuth2AuthorizeRequest
                 .withClientRegistrationId("storefront-machine")
-                .principal("storefront-machine")
+                .principal("system")
                 .build();
 
         return authorizedClientManager.authorize(authRequest)
                 .flatMap(authorizedClient -> {
-                    String token = authorizedClient.getAccessToken().getTokenValue();
-                    log.debug("Health check: Получен токен: {}", token);
+                    String accessToken = authorizedClient.getAccessToken().getTokenValue();
+                    log.debug("Health check: Получен токен: {}", accessToken);
                     return paymentApi.getApiClient().getWebClient().get()
                             .uri(paymentApi.getApiClient().getBasePath() + "/actuator/health")
-                            .header("Authorization", "Bearer " + token) // fixme: встраиваем токен прямо в запрос хелсчека
+                            .headers(h -> h.setBearerAuth(accessToken))  // ещё один способ использования Bearer-токена
                             .exchangeToMono(response -> {
                                 if (response.statusCode().is2xxSuccessful()) {
                                     log.debug("Health check OK");

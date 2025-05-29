@@ -31,9 +31,13 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      # Переменная для импорта рилма в Keycloak
+      KC_IMPORT: /opt/keycloak/data/import/realm-export.json
     command: ["start-dev"]
     ports:
       - "8080:8080"
+    volumes:
+      - ./keycloak/config/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     networks:
       - back
     restart: unless-stopped

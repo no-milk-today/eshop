@@ -1,6 +1,6 @@
 # Интернет магазин
 
-Reactive мультимодульное Web-приложение на Spring Boot, представляющее витрину товаров, которые пользователь может добавить в корзину и купить.
+Reactive мультимодульное Web-приложение на Spring Boot, представляющее витрину товаров, которые пользователь может добавить в корзину и купить. Используется OAuth2 с Keycloak для аутентификации и авторизации.
 
 ## Технологии
 
@@ -15,13 +15,14 @@ Reactive мультимодульное Web-приложение на Spring Boo
 - **Redis** – кэширование данных о товарах и хранение данных сервиса платежей
 - **JUnit 5** – модульные и интеграционные тесты
 - **WebTestClient** – для тестирования functional endpoint-ов
+- **Keycloak** – сервис аутентификации и авторизации
 - **Docker**
 - **Testcontainers** – тестирование с использованием контейнеров
 
 ## Сервис платежей
 
 - **URL**: http://localhost:8081/swagger-ui/index.html
-- **Эндпоинты**:
+- **Эндпоинты** (OAuth2 Bearer authentication is required):
   - **`POST /payments`**  
     Обрабатывает платеж.  
     **Тело запроса**:  
@@ -44,6 +45,22 @@ Reactive мультимодульное Web-приложение на Spring Boo
     **Ответы**:  
     - `200`: Успешное получение баланса  
     - `404`: Пользователь не найден  
+
+## Интеграция с Keycloak
+
+Приложение использует Keycloak для аутентификации и авторизации как пользователей, так и сервисов. В частности, для обеспечения безопасности межсервисного взаимодействия применяется клиент для service‑to‑service (Client Credentials Flow).
+
+**Основные настройки:**
+- **Адрес Keycloak:** http://localhost:8080
+- **Рилм:** shop-realm (При запуске контейнера Keycloak автоматически загрузит и настроит рилм из файла из `keycloak/config/realm-export.json`)
+- **Клиенты:**
+  - `storefront-client` – для браузерного доступа (Authorization Code Flow)
+  - `storefront-machine-client` – для service‑to‑service вызовов (Client Credentials Flow)
+
+**Keycloak интегрирован на всех уровнях:** 
+- от аутентификации пользователей (через OAuth2 и OpenID Connect). Также есть синхронизация юзеров с БД.
+- до безопасного межсервисного взаимодействия (для каждого реквеста создаётся OAuth2‑запрос через `ReactiveOAuth2AuthorizedClientManager`).  
+  В этой схеме **main-app** (витрина магазина) выступает как OAuth2‑клиент, а сервис **payment** — как ресурсный сервер.
 
 ## Интеграция с сервисом платежей
 
@@ -71,11 +88,13 @@ Reactive мультимодульное Web-приложение на Spring Boo
 
 2. **Запуск приложения:**
 
-Прокинуть env переменные `MYSQL_USER=значение` и `MYSQL_PASSWORD=значение`.
+Прокинуть env переменные `MYSQL_USER=значение` и `MYSQL_PASSWORD=значение`, а также Keycloak Client Secrets:
 
 ```bash
    $env:MYSQL_USER="значение" # лучше root
    $env:MYSQL_PASSWORD="значение" # и пассворд для рута
+   $env:STORE_FRONT_CLIENT_SECRET="FGIopMQW0f9Vd5ZnQRJqYvJYbSGvimen"
+   $env:STORE_FRONT_MACHINE_CLIENT_SECRET="B5phRhGMedpP80162IoT55nI90kHwvyK"
 ```
 
 - **создание БД и таблиц** находятся в файле `resources/db/sql/createDBAndTables.sql`.
