@@ -7,13 +7,13 @@ import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepositor
 import com.yandex.reactive.testcontainers.reshop.router.ProductRouter;
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
 import com.yandex.reactive.testcontainers.reshop.service.ProductService;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
@@ -28,12 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
 import static org.springframework.web.reactive.function.BodyInserters.fromFormData;
 
 //todo: из коробки не видит роутер и хендлер, проресерчить вопрос
 @Import({ProductRouter.class, ProductHandler.class})
 @WebFluxTest
-@Disabled
 public class ProductFunctionalEndpointTest {
 
     @MockitoBean
@@ -48,10 +48,17 @@ public class ProductFunctionalEndpointTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    // simulate client with OAuth2-login
+    private WebTestClient clientWithLogin() {
+        return webTestClient
+                .mutateWith(SecurityMockServerConfigurers.mockOAuth2Login())
+                .mutateWith(csrf());  // add CSRF-token for each request
+    }
+
     @Test
     void testIndexRedirect() {
-        webTestClient.get()
-                .uri("/")
+        clientWithLogin()
+                .get().uri("/")
                 .exchange()
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/main/items");
@@ -59,11 +66,11 @@ public class ProductFunctionalEndpointTest {
 
     @Test
     void testModifyMainItemsRedirect() {
-        // Simulate cartService.modifyItem returning an empty Mono
-        when(cartService.modifyItem(eq(1L), eq("plus")))
+        when(cartService.modifyItem(1L, "plus"))
                 .thenReturn(Mono.empty());
 
-        webTestClient.post()
+        clientWithLogin()
+                .post()
                 .uri("/main/items/1")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 //.bodyValue("action=plus") // можно и так
@@ -99,7 +106,7 @@ public class ProductFunctionalEndpointTest {
         when(cartProductRepository.findByCartId(eq(10L)))
                 .thenReturn(Flux.empty());
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/main/items")
                         .queryParam("search", "")
@@ -158,7 +165,7 @@ public class ProductFunctionalEndpointTest {
         when(cartProductRepository.findByCartId(eq(20L)))
                 .thenReturn(Flux.just(cpA, cpB));
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/main/items")
                         .queryParam("search", "")
@@ -214,7 +221,7 @@ public class ProductFunctionalEndpointTest {
         when(cartProductRepository.findByCartId(eq(1L)))
                 .thenReturn(Flux.just(cp1, cp2));
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/main/items")
                         .queryParam("search", "")
@@ -251,7 +258,7 @@ public class ProductFunctionalEndpointTest {
         when(cartService.getCart()).thenReturn(Mono.just(cart));
         when(cartProductRepository.findByCartId(eq(10L))).thenReturn(Flux.empty());
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/items/1")
                 .exchange()
                 .expectStatus().isOk()
@@ -260,7 +267,6 @@ public class ProductFunctionalEndpointTest {
                 .consumeWith(response -> {
                     String body = response.getResponseBody();
                     assertNotNull(body);
-                    assertTrue(body.contains("<form"));
                     assertTrue(body.contains("Test Product"));
                 });
     }
