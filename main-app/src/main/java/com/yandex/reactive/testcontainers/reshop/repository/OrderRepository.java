@@ -8,5 +8,6 @@ import reactor.core.publisher.Flux;
 
 @Repository
 public interface OrderRepository extends R2dbcRepository<Order, Long> {
+    Flux<Order> findByUserId(Long userId);
     Flux<Order> findByNumber(String number);
 }

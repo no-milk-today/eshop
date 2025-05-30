@@ -7,14 +7,15 @@ import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -72,17 +73,32 @@ public class OrderHandler {
     }
 
     /**
-     * GET "/orders" – отображение списка заказов.
+     * GET "/orders" – отображение списка заказов для текущего юзера.
      */
     public Mono<ServerResponse> orders(ServerRequest request) {
-        String sortBy = request.queryParam("sortBy").orElse(null);
-        Model model = new ConcurrentModel();
+        var authenticationMono = request.principal()
+                .cast(Authentication.class)
+                .filter(auth -> auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken))
+                .switchIfEmpty(Mono.empty());
+        // Extract username from authentication
+        var usernameMono = authenticationMono
+                .map(auth -> {
+                    if (auth.getPrincipal() instanceof String) {
+                        return (String) auth.getPrincipal();
+                    } else if (auth.getPrincipal() instanceof OidcUser) {
+                        return ((OidcUser) auth.getPrincipal()).getPreferredUsername();
+                    } else {
+                        return "Гость"; // fallback for unknown principal type
+                    }
+                })
+                .defaultIfEmpty("Гость");
 
-        Flux<Order> ordersFlux = (sortBy != null && !sortBy.isBlank())
-                ? orderService.findAllSorted(Sort.by(Sort.Direction.ASC, sortBy))
-                : orderService.findAll();
+        var model = new ConcurrentModel();
 
-        return ordersFlux
+        var ordersForUser = usernameMono
+                .flatMapMany(orderService::findOrdersForUsername);
+
+        return ordersForUser
                 .flatMap(order -> orderService.findByIdWithProducts(order.getId()))
                 .collectList()
                 .flatMap(orders -> {

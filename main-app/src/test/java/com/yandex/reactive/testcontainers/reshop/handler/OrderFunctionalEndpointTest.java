@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -125,70 +124,33 @@ public class OrderFunctionalEndpointTest {
     }
 
     @Test
-    void testOrdersListWithoutSortParam() {
+    void testOrdersForCurrentUser() {
         var order1 = new Order();
-        order1.setId(10L);
-        order1.setNumber("#10");
+        order1.setId(100L);
         order1.setOrderDate(LocalDateTime.now());
+        order1.setUserId(1L);
         order1.setProducts(Collections.emptyList());
+
         var order2 = new Order();
-        order2.setId(11L);
-        order2.setNumber("#11");
+        order2.setId(101L);
         order2.setOrderDate(LocalDateTime.now());
+        order2.setUserId(1L);
         order2.setProducts(Collections.emptyList());
 
-        // Если sortBy нету, вызывается findAll()
-        when(orderService.findAll()).thenReturn(Flux.just(order1, order2));
-
-        when(orderService.findByIdWithProducts(10L)).thenReturn(Mono.just(order1));
-        when(orderService.findByIdWithProducts(11L)).thenReturn(Mono.just(order2));
+        when(orderService.findOrdersForUsername(any())).thenReturn(Flux.just(order1, order2));
+        when(orderService.findByIdWithProducts(100L)).thenReturn(Mono.just(order1));
+        when(orderService.findByIdWithProducts(101L)).thenReturn(Mono.just(order2));
 
         clientWithLogin().get()
                 .uri("/orders")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
-                .expectBody(String.class).consumeWith(response -> {
+                .expectBody(String.class)
+                .consumeWith(response -> {
                     String body = response.getResponseBody();
                     assertNotNull(body);
                     assertTrue(body.contains("<table"));
                 });
-
-        verify(orderService).findAll();
-    }
-
-    @Test
-    void testFindAllSortedOrders() {
-        var order1 = new Order();
-        order1.setId(1L);
-        order1.setNumber("#100");
-        order1.setOrderDate(LocalDateTime.now());
-        order1.setProducts(Collections.emptyList());
-        var order2 = new Order();
-        order2.setId(2L);
-        order2.setNumber("#101");
-        order2.setOrderDate(LocalDateTime.now());
-        order2.setProducts(Collections.emptyList());
-
-        // sortBy есть, вызывается findAllSorted
-        when(orderService.findAllSorted(any(Sort.class))).thenReturn(Flux.just(order1, order2));
-        // For each order, the handler calls findByIdWithProducts.
-        when(orderService.findByIdWithProducts(1L)).thenReturn(Mono.just(order1));
-        when(orderService.findByIdWithProducts(2L)).thenReturn(Mono.just(order2));
-
-        clientWithLogin().get()
-                .uri(uriBuilder -> uriBuilder.path("/orders")
-                        .queryParam("sortBy", "number")
-                        .build())
-                .exchange()
-                .expectStatus().isOk()
-                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML)
-                .expectBody(String.class).consumeWith(response -> {
-                    String body = response.getResponseBody();
-                    assertNotNull(body);
-                    assertTrue(body.contains("<table"));
-                });
-
-        verify(orderService).findAllSorted(any(Sort.class));
     }
 }
