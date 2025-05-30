@@ -6,14 +6,14 @@ import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
 import com.yandex.reactive.testcontainers.reshop.router.OrderRouter;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
-import org.junit.jupiter.api.Disabled;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,10 +26,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
 
 @Import({OrderRouter.class, OrderHandler.class})
 @WebFluxTest
-@Disabled
 public class OrderFunctionalEndpointTest {
 
     @MockitoBean
@@ -41,6 +41,12 @@ public class OrderFunctionalEndpointTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    private WebTestClient clientWithLogin() {
+        return webTestClient
+                .mutateWith(SecurityMockServerConfigurers.mockOAuth2Login())
+                .mutateWith(csrf());
+    }
+
     @Test
     void testBuyOrder() {
         var order = new Order();
@@ -48,7 +54,7 @@ public class OrderFunctionalEndpointTest {
         order.setOrderDate(LocalDateTime.now());
         when(orderProcessingService.processOrder()).thenReturn(Mono.just(order));
 
-        webTestClient.post()
+        clientWithLogin().post()
                 .uri("/buy")
                 .exchange()
                 .expectStatus().is3xxRedirection()
@@ -62,7 +68,7 @@ public class OrderFunctionalEndpointTest {
         when(orderProcessingService.processOrder())
                 .thenReturn(Mono.error(new PaymentException("Payment failed due to insufficient funds")));
 
-        webTestClient.post()
+        clientWithLogin().post()
                 .uri("/buy")
                 .exchange()
                 .expectStatus().isEqualTo(402)
@@ -90,7 +96,7 @@ public class OrderFunctionalEndpointTest {
         when(orderService.findByIdWithProducts(3L)).thenReturn(Mono.just(order));
 
         // GET /orders/3, без передачи newOrder (по дефолту false)
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri(uriBuilder -> uriBuilder.path("/orders/3").build())
                 .exchange()
                 .expectStatus().isOk()
@@ -106,7 +112,7 @@ public class OrderFunctionalEndpointTest {
     void testGetOrderNotFound() {
         when(orderService.findByIdWithProducts(2L)).thenReturn(Mono.empty());
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/orders/2")
                 .exchange()
                 .expectStatus().isNotFound()
@@ -137,7 +143,7 @@ public class OrderFunctionalEndpointTest {
         when(orderService.findByIdWithProducts(10L)).thenReturn(Mono.just(order1));
         when(orderService.findByIdWithProducts(11L)).thenReturn(Mono.just(order2));
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/orders")
                 .exchange()
                 .expectStatus().isOk()
@@ -170,7 +176,7 @@ public class OrderFunctionalEndpointTest {
         when(orderService.findByIdWithProducts(1L)).thenReturn(Mono.just(order1));
         when(orderService.findByIdWithProducts(2L)).thenReturn(Mono.just(order2));
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri(uriBuilder -> uriBuilder.path("/orders")
                         .queryParam("sortBy", "number")
                         .build())

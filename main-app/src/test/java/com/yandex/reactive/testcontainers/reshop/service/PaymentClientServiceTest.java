@@ -56,7 +56,7 @@ class PaymentClientServiceTest {
     }
 
     private OAuth2AuthorizedClient createMockOAuth2AuthorizedClient() {
-        ClientRegistration clientRegistration = ClientRegistration
+        var clientRegistration = ClientRegistration
                 .withRegistrationId("storefront-machine")
                 .clientId("test-client")
                 .clientSecret("test-secret")
@@ -64,7 +64,7 @@ class PaymentClientServiceTest {
                 .tokenUri("https://test-keycloak/token")
                 .build();
 
-        OAuth2AccessToken accessToken = new OAuth2AccessToken(
+        var accessToken = new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
                 "mock-access-token",
                 Instant.now(),
@@ -75,7 +75,7 @@ class PaymentClientServiceTest {
     }
 
     private void setupWebClientMocks() {
-        ApiClient apiClient = mock(ApiClient.class);
+        var apiClient = mock(ApiClient.class);
         when(paymentApi.getApiClient()).thenReturn(apiClient);
         when(apiClient.getWebClient()).thenReturn(webClient);
         when(apiClient.getBasePath()).thenReturn("http://localhost:8081");
@@ -132,7 +132,6 @@ class PaymentClientServiceTest {
         when(requestHeadersSpec.exchangeToMono(any(Function.class)))
                 .thenReturn(Mono.error(new RuntimeException("Network error")));
 
-        // Act & Assert
         StepVerifier.create(paymentClientService.checkBalance("1", 100.0))
                 .expectNext(false)
                 .verifyComplete();
