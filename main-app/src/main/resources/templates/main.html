@@ -7,6 +7,9 @@
 </head>
 
 <body>
+    <a th:if="${!isAuthenticated}" th:href="@{/oauth2/authorization/storefront}" style="float:right;">
+        <b>ВХОД</b>
+    </a>
     <a th:if="${isAuthenticated}" href="/logout" style="float:right;">
         <b>ВЫХОД &cudarrr;</b>
     </a>
