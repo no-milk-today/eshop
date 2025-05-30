@@ -6,6 +6,7 @@ import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
 import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.OrderRepository;
+import com.yandex.reactive.testcontainers.reshop.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -23,12 +24,31 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderProductRepository orderProductRepository;
     private final ProductService productService;
+    private final UserRepository userRepository;
 
     public OrderService(OrderRepository orderRepository,
-                        OrderProductRepository orderProductRepository, ProductService productService) {
+                        OrderProductRepository orderProductRepository, ProductService productService, UserRepository userRepository) {
         this.orderRepository = orderRepository;
         this.orderProductRepository = orderProductRepository;
         this.productService = productService;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Находит заказы для пользователя по его username.
+     * Сначала достаёт User из БД, потом ищет по его id.
+     */
+    public Flux<Order>  findOrdersForUsername(String username) {
+        return userRepository.findByUsername(username)
+                .flatMapMany(user -> findOrdersForUser(user.getId()));
+    }
+
+    /**
+     * retrieve orders for current user.
+     */
+    public Flux<Order> findOrdersForUser(Long userId) {
+        log.debug("Retrieving orders for user with id: {}", userId);
+        return orderRepository.findByUserId(userId);
     }
 
     public Mono<Order> findById(Long id) {

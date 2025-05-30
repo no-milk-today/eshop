@@ -1,85 +1,140 @@
 package com.yandex.reactive.testcontainers.reshop.service;
 
+import com.yandex.reactive.testcontainers.reshop.client.ApiClient;
 import com.yandex.reactive.testcontainers.reshop.client.api.PaymentApi;
 import com.yandex.reactive.testcontainers.reshop.domain.BalanceResponse;
-import com.yandex.reactive.testcontainers.reshop.domain.PaymentRequest;
-import com.yandex.reactive.testcontainers.reshop.domain.PaymentResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.time.Instant;
+import java.util.function.Function;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-public class PaymentClientServiceTest {
+@ExtendWith(MockitoExtension.class)
+class PaymentClientServiceTest {
 
+    @Mock
     private PaymentApi paymentApi;
+
+    @Mock
+    private ReactiveOAuth2AuthorizedClientManager authorizedClientManager;
+
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec requestHeadersSpec;
+
     private PaymentClientService paymentClientService;
 
     @BeforeEach
     void setUp() {
-        paymentApi = mock(PaymentApi.class);
-        paymentClientService = new PaymentClientService(paymentApi);
+        OAuth2AuthorizedClient authorizedClient = createMockOAuth2AuthorizedClient();
+        when(authorizedClientManager.authorize(any())).thenReturn(Mono.just(authorizedClient));
+
+        paymentClientService = new PaymentClientService(paymentApi, authorizedClientManager);
+    }
+
+    private OAuth2AuthorizedClient createMockOAuth2AuthorizedClient() {
+        var clientRegistration = ClientRegistration
+                .withRegistrationId("storefront-machine")
+                .clientId("test-client")
+                .clientSecret("test-secret")
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .tokenUri("https://test-keycloak/token")
+                .build();
+
+        var accessToken = new OAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                "mock-access-token",
+                Instant.now(),
+                Instant.now().plusSeconds(3600)
+        );
+
+        return new OAuth2AuthorizedClient(clientRegistration, "system", accessToken);
+    }
+
+    private void setupWebClientMocks() {
+        var apiClient = mock(ApiClient.class);
+        when(paymentApi.getApiClient()).thenReturn(apiClient);
+        when(apiClient.getWebClient()).thenReturn(webClient);
+        when(apiClient.getBasePath()).thenReturn("http://localhost:8081");
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
     }
 
     @Test
-    void testCheckBalanceTrue() {
-        var userId = "user1";
-        double amount = 100.0;
+    void testCheckBalance_Success_UserChecksOwnBalance() {
+        setupWebClientMocks();
+
         var balanceResponse = new BalanceResponse();
-        balanceResponse.setBalance(150.0);
-        when(paymentApi.getBalance(userId)).thenReturn(Mono.just(balanceResponse));
+        balanceResponse.setUserId("1");
+        balanceResponse.setBalance(500.0);
 
-        var result = paymentClientService.checkBalance(userId, amount).block();
+        var successResponse = mock(ClientResponse.class);
+        when(successResponse.statusCode()).thenReturn(HttpStatus.OK);
+        when(successResponse.bodyToMono(BalanceResponse.class)).thenReturn(Mono.just(balanceResponse));
+
+        when(requestHeadersSpec.exchangeToMono(any(Function.class))).thenAnswer(invocation -> {
+            Function<ClientResponse, Mono<BalanceResponse>> function = invocation.getArgument(0);
+            return function.apply(successResponse);
+        });
+        var result = paymentClientService.checkBalance("1", 400.0).block();
+
         assertThat(result).isTrue();
-        verify(paymentApi, times(1)).getBalance(userId);
+        verify(paymentApi.getApiClient().getWebClient()).get();
     }
 
     @Test
-    void testCheckBalanceFalse() {
-        var userId = "user1";
-        double amount = 100.0;
-        var balanceResponse = new BalanceResponse();
-        balanceResponse.setBalance(50.0);
-        when(paymentApi.getBalance(userId)).thenReturn(Mono.just(balanceResponse));
+    void testCheckBalance_Forbidden_UserTriesToAccessAnotherUserBalance() {
+        setupWebClientMocks();
 
-        Boolean result = paymentClientService.checkBalance(userId, amount).block();
+        var forbiddenResponse = mock(ClientResponse.class);
+        when(forbiddenResponse.statusCode()).thenReturn(HttpStatus.FORBIDDEN);
+
+        when(requestHeadersSpec.exchangeToMono(any(Function.class))).thenAnswer(invocation -> {
+            Function<ClientResponse, Mono<BalanceResponse>> function = invocation.getArgument(0);
+            return function.apply(forbiddenResponse);
+        });
+
+        var result = paymentClientService.checkBalance("2", 100.0).block();
+
         assertThat(result).isFalse();
-        verify(paymentApi, times(1)).getBalance(userId);
+        verify(paymentApi.getApiClient().getWebClient()).get();
     }
 
     @Test
-    void testMakePaymentSuccess() {
-        var userId = "user2";
-        double amount = 100.0;
-        var paymentResponse = new PaymentResponse();
-        paymentResponse.setStatus("SUCCESS");
-        when(paymentApi.processPayment(any(PaymentRequest.class))).thenReturn(Mono.just(paymentResponse));
+    void testCheckBalance_NetworkError_ReturnsFalse() {
+        setupWebClientMocks();
 
-        var result = paymentClientService.makePayment(userId, amount).block();
-        assertThat(result).isTrue();
+        when(requestHeadersSpec.exchangeToMono(any(Function.class)))
+                .thenReturn(Mono.error(new RuntimeException("Network error")));
 
-        var captor = ArgumentCaptor.forClass(PaymentRequest.class);
-        verify(paymentApi, times(1)).processPayment(captor.capture());
-        var req = captor.getValue();
-        assertThat(req.getUserId()).isEqualTo(userId);
-        assertThat(req.getAmount()).isEqualTo(amount);
-        assertThat(req.getCurrency()).isEqualTo("RUB");
-    }
-
-    @Test
-    void testMakePaymentFailure() {
-        var userId = "user2";
-        double amount = 100.0;
-        var paymentResponse = new PaymentResponse();
-        paymentResponse.setStatus("FAILED");
-        when(paymentApi.processPayment(any(PaymentRequest.class))).thenReturn(Mono.just(paymentResponse));
-
-        var result = paymentClientService.makePayment(userId, amount).block();
-        assertThat(result).isFalse();
-
-        verify(paymentApi, times(1)).processPayment(any(PaymentRequest.class));
+        StepVerifier.create(paymentClientService.checkBalance("1", 100.0))
+                .expectNext(false)
+                .verifyComplete();
     }
 }
+

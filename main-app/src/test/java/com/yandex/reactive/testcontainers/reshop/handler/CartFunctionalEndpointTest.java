@@ -9,16 +9,16 @@ import com.yandex.reactive.testcontainers.reshop.repository.ProductRepository;
 import com.yandex.reactive.testcontainers.reshop.router.CartRouter;
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
 import com.yandex.reactive.testcontainers.reshop.service.PaymentClientService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,6 +45,20 @@ public class CartFunctionalEndpointTest {
     @Autowired
     private WebTestClient webTestClient;
 
+    /**
+     * Возвращает WebTestClient эмулирующий авторизованного OAuth2 юзера
+     * и CSRF-токен для POST/PUT/DELETE
+     */
+    private WebTestClient clientWithLogin() {
+        return webTestClient
+                .mutateWith(
+                    SecurityMockServerConfigurers.mockOAuth2Login()
+                )
+                .mutateWith(
+                    SecurityMockServerConfigurers.csrf()
+                );
+    }
+
     @Test
     void testGetCartItemsEnoughMoney() {
         // Set up a Cart with id=1 and totalPrice=20.0 and userId=1
@@ -70,7 +84,7 @@ public class CartFunctionalEndpointTest {
                 .thenReturn(Mono.just(true));
 
         // Perform GET request and verify response contains product info and total price
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -109,7 +123,7 @@ public class CartFunctionalEndpointTest {
                 .thenReturn(Mono.just(false));
 
         // Perform GET request and verify the rendered HTML
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -146,7 +160,7 @@ public class CartFunctionalEndpointTest {
         when(paymentClientService.checkBalance(eq(String.valueOf(cart.getUserId())), eq(cart.getTotalPrice())))
                 .thenReturn(Mono.just(true));
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -167,7 +181,7 @@ public class CartFunctionalEndpointTest {
         when(cartService.modifyItem(eq(100L), eq("plus")))
                 .thenReturn(Mono.empty());
 
-        webTestClient.post()
+        clientWithLogin().post()
                 .uri("/cart/items/100")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(fromFormData("action", "plus"))
@@ -197,7 +211,7 @@ public class CartFunctionalEndpointTest {
         when(paymentClientService.checkBalance(eq(String.valueOf(cart.getUserId())), eq(cart.getTotalPrice())))
                 .thenReturn(Mono.just(true));
 
-        webTestClient.get()
+        clientWithLogin().get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()

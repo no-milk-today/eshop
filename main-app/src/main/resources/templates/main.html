@@ -7,12 +7,25 @@
 </head>
 
 <body>
-    <a href="/orders" style="float:right;">
+    <a th:if="${!isAuthenticated}" th:href="@{/oauth2/authorization/storefront}" style="float:right;">
+        <b>ВХОД</b>
+    </a>
+    <a th:if="${isAuthenticated}" href="/logout" style="float:right;">
+        <b>ВЫХОД &cudarrr;</b>
+    </a>
+
+    <a th:if="${isAuthenticated}" href="/orders" style="float:right;">
         <b>ЗАКАЗЫ &cudarrr;</b>
     </a>
-    <a href="/cart/items" style="float:right;">
+    <a th:if="${isAuthenticated}" href="/cart/items" style="float:right;">
         <b>КОРЗИНА &cudarrr;</b>
     </a>
+
+    <!-- Блок приветствия -->
+    <div th:if="${username != null}" style="margin: 10px;">
+        <h3>Привет, <span th:text="${username}">User</span>!</h3>
+    </div>
+
     <table style="width:70%;margin-left:auto;margin-right:auto;">
         <tr>
             <td>
@@ -69,7 +82,7 @@
                     <tr>
                         <td th:text="${item.getDescription()}"></td>
                     </tr>
-                    <tr>
+                    <tr th:if="${isAuthenticated}">
                         <td>
                             <form th:action="${'/main/items/'+item.getId()}" method="post">
                                 <button name="action" value="minus">-</button>

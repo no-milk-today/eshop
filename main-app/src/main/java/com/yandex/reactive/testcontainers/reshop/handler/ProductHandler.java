@@ -10,6 +10,9 @@ import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepositor
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
 import com.yandex.reactive.testcontainers.reshop.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -55,14 +58,43 @@ public class ProductHandler {
         int pageSize = Integer.parseInt(request.queryParam("pageSize").orElse("10"));
         int pageNumber = Integer.parseInt(request.queryParam("pageNumber").orElse("1"));
 
-        Flux<Product> productFlux = productService.getProducts(search, sort, pageNumber, pageSize);
-        Mono<List<List<Product>>> groupedMono = productService.groupProducts(productFlux);
-        Mono<Map<Long, Integer>> countsMono = getProductCounts();
+        Mono<Authentication> authenticationMono = request.principal()
+                .cast(Authentication.class)
+                .filter(auth -> auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken))
+                .switchIfEmpty(Mono.empty());
 
-        return Mono.zip(groupedMono, countsMono)
+        Mono<String> usernameMono = authenticationMono
+                .map(auth -> {
+                    if (auth.getPrincipal() instanceof String) {
+                        return (String) auth.getPrincipal();
+                    } else if (auth.getPrincipal() instanceof OidcUser) {
+                        return ((OidcUser) auth.getPrincipal()).getPreferredUsername();
+                    } else {
+                        return "Гость"; // fallback for unknown principal type
+                    }
+                })
+                .defaultIfEmpty("Гость");
+
+        Mono<Boolean> isAuthenticatedMono = authenticationMono
+                .map(auth -> true)
+                .defaultIfEmpty(false);
+
+        Flux<Product> productFlux = productService.getProducts(search, sort, pageNumber, pageSize)
+                .doOnError(e -> log.error("Error in getProducts", e));
+
+        Mono<List<List<Product>>> groupedMono = productService.groupProducts(productFlux)
+                .doOnError(e -> log.error("Error in groupProducts", e));
+
+        Mono<Map<Long, Integer>> countsMono = getProductCounts()
+                .doOnError(e -> log.error("Error in getProductCounts", e));
+
+        return Mono.zip(groupedMono, countsMono, usernameMono, isAuthenticatedMono)
+                .doOnError(e -> log.error("Error during zipping", e))
                 .flatMap(tuple -> {
                     List<List<Product>> groupedProducts = tuple.getT1();
                     Map<Long, Integer> counts = tuple.getT2();
+                    String username = tuple.getT3();
+                    Boolean isAuthenticated = tuple.getT4();
 
                     // Для каждого продукта устанавливаем поле count из полученных данных (если не найден – 0)
                     groupedProducts.forEach(row ->
@@ -88,10 +120,13 @@ public class ProductHandler {
                     model.put("search", search);
                     model.put("sort", sort);
                     model.put("paging", paging);
+                    model.put("username", username);
+                    model.put("isAuthenticated", isAuthenticated);
 
                     return ServerResponse.ok().render("main", model);
                 });
     }
+
 
     /**
      * POST "/main/items/{id}" – изменение количества товара в корзине.
@@ -151,6 +186,10 @@ public class ProductHandler {
      */
     private Mono<Map<Long, Integer>> getProductCounts() {
         return cartService.getCart()
+                .onErrorResume(ResourceNotFoundException.class, ex -> {
+                    log.debug("User not authenticated, returning empty counts map.", ex);
+                    return Mono.empty();
+                })
                 .flatMapMany(cart ->
                         cartProductRepository.findByCartId(cart.getId())
                 )

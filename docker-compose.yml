@@ -25,6 +25,27 @@ services:
       - back
     restart: unless-stopped
 
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:26.1.3
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Переменная для импорта рилма в Keycloak
+      KC_IMPORT: /opt/keycloak/data/import/realm-export.json
+    command:
+      - start-dev
+      - --import-realm
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/config/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    networks:
+      - back
+    restart: unless-stopped
+    depends_on:
+      - db
+
 networks:
   back:
     driver: bridge
