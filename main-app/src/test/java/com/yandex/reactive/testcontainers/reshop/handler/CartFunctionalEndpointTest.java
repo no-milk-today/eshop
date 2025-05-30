@@ -3,7 +3,6 @@ package com.yandex.reactive.testcontainers.reshop.handler;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Cart;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.CartProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
-import com.yandex.reactive.testcontainers.reshop.handler.security.SecurityConfig;
 import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
 import com.yandex.reactive.testcontainers.reshop.repository.ProductRepository;
 import com.yandex.reactive.testcontainers.reshop.router.CartRouter;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.web.reactive.function.BodyInserters.fromFormData;
 
-@Import({CartRouter.class, CartHandler.class, SecurityConfig.class})
+@Import({CartRouter.class, CartHandler.class})
 @WebFluxTest
 public class CartFunctionalEndpointTest {
 
