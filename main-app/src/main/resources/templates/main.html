@@ -20,6 +20,12 @@
     <a th:if="${isAuthenticated}" href="/cart/items" style="float:right;">
         <b>КОРЗИНА &cudarrr;</b>
     </a>
+
+    <!-- Блок приветствия -->
+    <div th:if="${username != null}" style="margin: 10px;">
+        <h3>Привет, <span th:text="${username}">User</span>!</h3>
+    </div>
+
     <table style="width:70%;margin-left:auto;margin-right:auto;">
         <tr>
             <td>

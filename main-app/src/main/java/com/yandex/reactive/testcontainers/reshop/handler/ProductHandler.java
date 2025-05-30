@@ -12,6 +12,7 @@ import com.yandex.reactive.testcontainers.reshop.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -63,7 +64,15 @@ public class ProductHandler {
                 .switchIfEmpty(Mono.empty());
 
         Mono<String> usernameMono = authenticationMono
-                .map(Authentication::getName)
+                .map(auth -> {
+                    if (auth.getPrincipal() instanceof String) {
+                        return (String) auth.getPrincipal();
+                    } else if (auth.getPrincipal() instanceof OidcUser) {
+                        return ((OidcUser) auth.getPrincipal()).getPreferredUsername();
+                    } else {
+                        return "Гость"; // fallback for unknown principal type
+                    }
+                })
                 .defaultIfEmpty("Гость");
 
         Mono<Boolean> isAuthenticatedMono = authenticationMono
@@ -84,7 +93,7 @@ public class ProductHandler {
                 .flatMap(tuple -> {
                     List<List<Product>> groupedProducts = tuple.getT1();
                     Map<Long, Integer> counts = tuple.getT2();
-                    String username = tuple.getT3(); // todo research why UUID instead of username
+                    String username = tuple.getT3();
                     Boolean isAuthenticated = tuple.getT4();
 
                     // Для каждого продукта устанавливаем поле count из полученных данных (если не найден – 0)
@@ -111,7 +120,7 @@ public class ProductHandler {
                     model.put("search", search);
                     model.put("sort", sort);
                     model.put("paging", paging);
-                    //model.put("username", username); // username issue
+                    model.put("username", username);
                     model.put("isAuthenticated", isAuthenticated);
 
                     return ServerResponse.ok().render("main", model);
