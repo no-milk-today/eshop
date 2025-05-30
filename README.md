@@ -61,6 +61,12 @@ Reactive мультимодульное Web-приложение на Spring Boo
   - `storefront-client` – для браузерного доступа (Authorization Code Flow)
   - `storefront-machine-client` – для service‑to‑service вызовов (Client Credentials Flow)
 
+**Создать юзеров в keycloak, например**
+![img.png](keycloak/user1creation.png)
+![img_1.png](keycloak/userpass.png)
+
+**По аналогии создать еще несколько юзеров**
+
 **Keycloak интегрирован на всех уровнях:** 
 - от аутентификации пользователей (через OAuth2 и OpenID Connect). Также есть синхронизация юзеров с БД.
 - до безопасного межсервисного взаимодействия (для каждого реквеста создаётся OAuth2‑запрос через `ReactiveOAuth2AuthorizedClientManager`).  
