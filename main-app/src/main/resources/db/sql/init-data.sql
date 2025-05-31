@@ -14,9 +14,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- Insert default user with id 1
 INSERT INTO users (id, username, password, email)
-VALUES (1, 'default', 'pass', 'default@example.com'),
-       (2, 'alice', 'alicepass', 'alice@example.com'),
-       (3, 'bob', 'bobpass', 'bob@example.com');
+VALUES (1, 'default', 'pass', 'default@example.com');
 
 -- Inserts 15 test products for ProductController testing
 INSERT INTO products (id, name, price, description, img_path)

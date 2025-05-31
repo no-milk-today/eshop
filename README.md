@@ -103,8 +103,8 @@ Reactive мультимодульное Web-приложение на Spring Boo
 ```bash
    $env:MYSQL_USER="значение" # лучше root
    $env:MYSQL_PASSWORD="значение" # и пассворд для рута
-   $env:STORE_FRONT_CLIENT_SECRET="FGIopMQW0f9Vd5ZnQRJqYvJYbSGvimen"
-   $env:STORE_FRONT_MACHINE_CLIENT_SECRET="B5phRhGMedpP80162IoT55nI90kHwvyK"
+   $env:STORE_FRONT_CLIENT_SECRET="значение" # Client details >> Credentials >> Client Secret
+   $env:STORE_FRONT_MACHINE_CLIENT_SECRET="значение" # Client details >> Credentials >> Client Secret
 ```
 
 - **создание БД и таблиц** находятся в файле `resources/db/sql/createDBAndTables.sql`.
