@@ -1,7 +1,7 @@
-package com.yandex.reactive.testcontainers.reshop.router;
+package com.yandex.reactive.testcontainers.reshop.controller.router;
 
 import com.yandex.reactive.testcontainers.reshop.exception.ResourceNotFoundException;
-import com.yandex.reactive.testcontainers.reshop.handler.ProductHandler;
+import com.yandex.reactive.testcontainers.reshop.controller.handler.ProductHandler;
 
 import java.util.Map;
 import org.springframework.context.annotation.Bean;

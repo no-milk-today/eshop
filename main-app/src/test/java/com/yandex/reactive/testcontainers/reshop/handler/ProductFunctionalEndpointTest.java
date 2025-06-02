@@ -1,10 +1,11 @@
 package com.yandex.reactive.testcontainers.reshop.handler;
 
+import com.yandex.reactive.testcontainers.reshop.controller.handler.ProductHandler;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Cart;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.CartProduct;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Product;
 import com.yandex.reactive.testcontainers.reshop.repository.CartProductRepository;
-import com.yandex.reactive.testcontainers.reshop.router.ProductRouter;
+import com.yandex.reactive.testcontainers.reshop.controller.router.ProductRouter;
 import com.yandex.reactive.testcontainers.reshop.service.CartService;
 import com.yandex.reactive.testcontainers.reshop.service.ProductService;
 import org.junit.jupiter.api.Test;

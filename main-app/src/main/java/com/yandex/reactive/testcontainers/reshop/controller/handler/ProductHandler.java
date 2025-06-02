@@ -1,4 +1,4 @@
-package com.yandex.reactive.testcontainers.reshop.handler;
+package com.yandex.reactive.testcontainers.reshop.controller.handler;
 
 
 import com.yandex.reactive.testcontainers.reshop.domain.entity.CartProduct;

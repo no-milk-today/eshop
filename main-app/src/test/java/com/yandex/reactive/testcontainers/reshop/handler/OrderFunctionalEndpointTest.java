@@ -1,9 +1,10 @@
 package com.yandex.reactive.testcontainers.reshop.handler;
 
+import com.yandex.reactive.testcontainers.reshop.controller.handler.OrderHandler;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.Order;
 import com.yandex.reactive.testcontainers.reshop.domain.entity.User;
 import com.yandex.reactive.testcontainers.reshop.exception.PaymentException;
-import com.yandex.reactive.testcontainers.reshop.router.OrderRouter;
+import com.yandex.reactive.testcontainers.reshop.controller.router.OrderRouter;
 import com.yandex.reactive.testcontainers.reshop.service.OrderProcessingService;
 import com.yandex.reactive.testcontainers.reshop.service.OrderService;
 import org.junit.jupiter.api.Test;
